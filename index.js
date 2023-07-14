@@ -17,28 +17,28 @@ const optionsList = [
         alias: "w",
         type: String,
         defaultValue: "localhost",
-        description: "The host of the wallet",
+        description: "The host of the wallet.",
     },
     {
         name: "wallet_port",
         alias: "s",
         type: Number,
         defaultValue: 55400,
-        description: "The port of the wallet",
+        description: "The port of the wallet.",
     },
     {
         name: "key_path",
         alias: "k",
         type: String,
         defaultValue: "~/.chia/mainnet/config/ssl/daemon/private_daemon.key",
-        description: "The path to the wallet private key",
+        description: "The path to the wallet private key.",
     },
     {
         name: "cert_path",
         alias: "c",
         type: String,
         defaultValue: "~/.chia/mainnet/config/ssl/daemon/private_daemon.crt",
-        description: "The path to the wallet certificate",
+        description: "The path to the wallet certificate.",
     },
     {
         name: "wallet_fingerprints",
@@ -60,7 +60,13 @@ const optionsList = [
         alias: "t",
         type: Number,
         defaultValue: 30,
-        description: "The timeout in seconds for the wallet connection",
+        description: "The timeout in seconds for the wallet connection.",
+    },
+    {
+        name: "json",
+        alias: "j",
+        type: Boolean,
+        description: "Return results as json.",
     },
     {
         name: "help",
@@ -101,9 +107,13 @@ async function dumpSwaps(options) {
         console.error("Could not connect to wallet");
     } else {
         swaps.forEach((swap) => {
-            console.log(
-                `Swapped ${swap.offered.xch} MOJO and ${swap.offered.token_amount} ${swap.offered.token.short_name} for ${swap.requested.token_amount} ${swap.requested.pair_name}`
-            );
+            if (options.json) {
+                console.log(JSON.stringify(swap));
+            } else {
+                console.log(
+                    `Swapped ${swap.offered.xch} MOJO and ${swap.offered.token_amount} ${swap.offered.token.short_name} for ${swap.requested.token_amount} ${swap.requested.pair_name}`
+                );
+            }
         });
     }
 }

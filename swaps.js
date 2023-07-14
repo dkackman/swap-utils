@@ -2,21 +2,25 @@ import { ChiaDaemon } from "chia-daemon";
 import { getToken } from "./tibet.js";
 import _ from "lodash";
 
-export async function dumpOffers(connection, fingerprints) {
-    const chia = new ChiaDaemon(connection, "offer-dump");
-    const connected = await chia.connect();
-    if (connected) {
-        const walletFingerprints = fingerprints || [null];
-        for await (const fingerprint of walletFingerprints) {
-            await dumpWallet(chia, fingerprint);
+export async function getSwaps(connection, fingerprints) {
+    const chia = new ChiaDaemon(connection, "swap-utils");
+    if (!(await chia.connect())) {
+        return undefined;
+    }
+
+    let swaps = [];
+    try {
+        for await (const fingerprint of fingerprints || [null]) {
+            swaps = swaps.concat(await getSwapsFromWallet(chia, fingerprint));
         }
+    } finally {
         chia.disconnect();
     }
 
-    return connected;
+    return swaps;
 }
 
-async function dumpWallet(chia, fingerprint) {
+async function getSwapsFromWallet(chia, fingerprint) {
     // null signals just do the default wallet
     if (fingerprint !== null) {
         await chia.services.wallet.log_in({
@@ -24,6 +28,7 @@ async function dumpWallet(chia, fingerprint) {
         });
     }
 
+    const swaps = [];
     const count = await chia.services.wallet.get_offers_count();
     const pageSize = 10;
     for (let i = 0; i < count.total; i += pageSize) {
@@ -44,15 +49,24 @@ async function dumpWallet(chia, fingerprint) {
                 item.summary.offered.xch !== undefined
         )) {
             const offeredPair = getOfferedPair(trade.summary.offered);
-            const requestedToken = getRequestedToken(
-                trade.summary.requested,
-                offeredPair.token.pair_name
-            );
-            console.log(
-                `Swapped ${offeredPair.xch} MOJO and ${offeredPair.token_amount} ${offeredPair.token.short_name} for ${requestedToken.token_amount} ${requestedToken.pair_name}`
-            );
+            // this filters out offers that are just XCH
+            // also filters tokens that aren't on tibet-swap
+            // can't be a swap without a token
+            // (what if i offer a token and xch for an nft?)
+            if (offeredPair.token !== undefined) {
+                const requestedToken = getRequestedToken(
+                    trade.summary.requested,
+                    offeredPair.token.pair_name
+                );
+                swaps.push({
+                    offered: offeredPair,
+                    requested: requestedToken,
+                });
+            }
         }
     }
+
+    return swaps;
 }
 
 function getRequestedToken(requested, pairName) {
