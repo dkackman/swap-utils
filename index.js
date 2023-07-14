@@ -6,5 +6,5 @@ await dumpOffers({
     key_path: "~\\.chia\\mainnet\\config\\ssl\\daemon\\private_daemon.key",
     cert_path: "~\\.chia\\mainnet\\config\\ssl\\daemon\\private_daemon.crt",
     timeout_seconds: 30,
-    fingerprint: 420316971, // fp of your wallet if you have more than 1
+    fingerprint: 420316971, // fp of your swap wallet if you have more than one
 });
