@@ -1,12 +1,12 @@
 import { ChiaDaemon } from "chia-daemon";
 import _ from "lodash";
 
-export async function dumpOffers(connection) {
+export async function dumpOffers(connection, fingerprint) {
     const chia = new ChiaDaemon(connection, "offer-dump");
     const connected = await chia.connect();
     if (connected) {
         await chia.services.wallet.log_in({
-            fingerprint: connection.fingerprint,
+            fingerprint: fingerprint,
         });
 
         const count = await chia.services.wallet.get_offers_count();
@@ -14,7 +14,7 @@ export async function dumpOffers(connection) {
         for (let i = 0; i < count.my_offers_count; i += pageSize) {
             const allOffers = await chia.services.wallet.get_all_offers({
                 start: i,
-                end: i + pageSize - 1,
+                end: i + pageSize,
                 exclude_my_offers: false,
                 exclude_taken_offers: false,
                 include_completed: true,
