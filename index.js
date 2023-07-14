@@ -10,17 +10,17 @@ const optionsList = [
         type: String,
         defaultOption: true,
         defaultValue: "dump",
-        description: "The command to run.",
+        description: "The command to run. (dump and imp are supported)",
     },
     {
-        name: "wallet_host",
+        name: "host",
         alias: "w",
         type: String,
         defaultValue: "localhost",
         description: "The host of the wallet.",
     },
     {
-        name: "wallet_port",
+        name: "port",
         alias: "s",
         type: Number,
         defaultValue: 55400,
@@ -56,7 +56,7 @@ const optionsList = [
         description: "The root uri of the tibet api",
     },
     {
-        name: "timeout",
+        name: "timeout_seconds",
         alias: "t",
         type: Number,
         defaultValue: 30,
@@ -85,6 +85,8 @@ if (options.help) {
 
     if (options.command === "dump") {
         await dumpSwaps(options);
+    } else if (options.command === "dump") {
+        await dumpSwaps(options);
     } else {
         console.error(`Unknown command ${options.command}`);
         showHelp();
@@ -92,16 +94,7 @@ if (options.help) {
 }
 
 async function dumpSwaps(options) {
-    const swaps = await getSwaps(
-        {
-            host: options.wallet_host,
-            port: options.wallet_port,
-            key_path: options.key_path,
-            cert_path: options.cert_path,
-            timeout_seconds: options.timeout,
-        },
-        options.wallet_fingerprints
-    );
+    const swaps = await getSwaps(options, options.wallet_fingerprints);
 
     if (!swaps) {
         console.error("Could not connect to wallet");
