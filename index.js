@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import commandLineUsage from "command-line-usage";
 import commandLineArgs from "command-line-args";
-import { dumpOffers } from "./dump.js";
+import { getSwaps } from "./swaps.js";
 import { loadTokens } from "./tibet.js";
 
 const optionsList = [
@@ -77,7 +77,16 @@ if (options.help) {
 } else {
     await loadTokens(`${options.tibet_api_uri}tokens`);
 
-    const connected = await dumpOffers(
+    if (options.command === "dump") {
+        await dumpSwaps(options);
+    } else {
+        console.error(`Unknown command ${options.command}`);
+        showHelp();
+    }
+}
+
+async function dumpSwaps(options) {
+    const swaps = await getSwaps(
         {
             host: options.wallet_host,
             port: options.wallet_port,
@@ -88,8 +97,14 @@ if (options.help) {
         options.wallet_fingerprints
     );
 
-    if (!connected) {
+    if (!swaps) {
         console.error("Could not connect to wallet");
+    } else {
+        swaps.forEach((swap) => {
+            console.log(
+                `Swapped ${swap.offered.xch} MOJO and ${swap.offered.token_amount} ${swap.offered.token.short_name} for ${swap.requested.token_amount} ${swap.requested.pair_name}`
+            );
+        });
     }
 }
 
