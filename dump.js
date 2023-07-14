@@ -26,7 +26,7 @@ async function dumpWallet(chia, fingerprint) {
 
     const count = await chia.services.wallet.get_offers_count();
     const pageSize = 10;
-    for (let i = 0; i < count.my_offers_count; i += pageSize) {
+    for (let i = 0; i < count.total; i += pageSize) {
         const allOffers = await chia.services.wallet.get_all_offers({
             start: i,
             end: i + pageSize,
