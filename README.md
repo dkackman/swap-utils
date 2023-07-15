@@ -15,6 +15,8 @@ npm install
 
 ## Usage
 
+It's not published on npmjs yet, so you'll need to run it from the repo root with `npx .`
+
 ```bash
 chia swap-utils
 
