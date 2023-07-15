@@ -6,7 +6,7 @@ A small utility to show impermanent loss for swaps made on the [tibet swap liqui
 
 ## Install
 
-Node is a prerequisite.
+[Node](https://nodejs.org) is a prerequisite.
 
 ```bash
 # in the repo root
