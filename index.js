@@ -118,8 +118,8 @@ async function impermanence(options, tibetSwap) {
         console.error("Could not connect to wallet");
         return;
     }
-    // TODO - consolidate swaps by pair group by swap token sum(token_amount), sum(xch_amount)
-    // get current quote for each pair
+
+    let totalNetXchAmount = 0;
     for await (const swap of swaps) {
         const quote = await tibetSwap.getQuote(
             swap.pair_id,
@@ -131,10 +131,10 @@ async function impermanence(options, tibetSwap) {
         console.log(
             `Now worth ${quote.xch_out_string} XCH and ${quote.token_out_string} ${swap.offered.token.short_name}`
         );
-        const netXch = (quote.xch_out - swap.offered.xch_amount).toLocaleString(
-            undefined,
-            floatFormat
-        );
+        const netXchAmount = quote.xch_out - swap.offered.xch_amount;
+        totalNetXchAmount += netXchAmount;
+        const netXch = netXchAmount.toLocaleString(undefined, floatFormat);
+
         const netToken = (
             quote.token_out - swap.offered.token_amount
         ).toLocaleString(undefined, floatFormat);
@@ -143,6 +143,12 @@ async function impermanence(options, tibetSwap) {
         );
         console.log("--------------------------------------------------");
     }
+    console.log(
+        `Total net ${totalNetXchAmount.toLocaleString(
+            undefined,
+            floatFormat
+        )} XCH`
+    );
 }
 
 async function dumpSwaps(options, tibetSwap) {
