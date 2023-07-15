@@ -32,14 +32,14 @@ const optionsList = [
         alias: "k",
         type: String,
         defaultValue: "~/.chia/mainnet/config/ssl/daemon/private_daemon.key",
-        description: "The path to the wallet private key.",
+        description: "The path to the daemon private key.",
     },
     {
         name: "cert_path",
         alias: "c",
         type: String,
         defaultValue: "~/.chia/mainnet/config/ssl/daemon/private_daemon.crt",
-        description: "The path to the wallet certificate.",
+        description: "The path to the daemon certificate.",
     },
     {
         name: "wallet_fingerprints",

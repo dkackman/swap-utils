@@ -28,14 +28,14 @@ Options
   -w, --host string                      The chia daemon host. 
                                          (localhost)                
   -s, --port number                      The chia daemon port. (55400)
-  -k, --key_path string                  The path to the wallet private key.    
-  -c, --cert_path string                 The path to the wallet certificate.    
+  -k, --key_path string                  The path to the daemon private key.    
+  -c, --cert_path string                 The path to the daemon certificate.    
   -f, --wallet_fingerprints number[]     Optional list of wallet fingerprints to     
                                          use.
   -a, --tibet_api_uri string             The root uri of the tibet api          
   -i, --tibet_analytics_api_uri string   The root uri of the tibet analytics    
                                          api                                    
-  -t, --timeout_seconds number           The timeout in seconds for the wallet  
+  -t, --timeout_seconds number           The timeout in seconds for the daemon  
                                          connection.                            
   -j, --json                             Return results as json.                
   -h, --help                             Display this usage guide.              
