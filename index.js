@@ -174,7 +174,7 @@ function showHelp() {
         {
             header: "chia swap-utils",
             content:
-                "Shows all completed swaps for a given wallet fingerprint.  The wallet must be running and unlocked.",
+                "Shows summarized swaps for the given wallet fingerprints. The wallet must be running and unlocked.",
         },
         {
             header: "Options",
