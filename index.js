@@ -2,7 +2,7 @@
 import commandLineUsage from "command-line-usage";
 import commandLineArgs from "command-line-args";
 import { getSwaps } from "./swaps.js";
-import { loadTokens } from "./tibet.js";
+import TibetSwap from "./tibet.js";
 
 const optionsList = [
     {
@@ -10,7 +10,7 @@ const optionsList = [
         type: String,
         defaultOption: true,
         defaultValue: "dump",
-        description: "The command to run. (dump and imp are supported)",
+        description: "The command to run. (swaps and imp are supported)",
     },
     {
         name: "host",
@@ -52,8 +52,15 @@ const optionsList = [
         name: "tibet_api_uri",
         alias: "a",
         type: String,
-        defaultValue: "https://api.v2.tibetswap.io/",
+        defaultValue: "https://api.v2.tibetswap.io",
         description: "The root uri of the tibet api",
+    },
+    {
+        name: "tibet_analytics_api_uri",
+        alias: "i",
+        type: String,
+        defaultValue: "https://api.info.v2.tibetswap.io",
+        description: "The root uri of the tibet analytics api",
     },
     {
         name: "timeout_seconds",
@@ -77,38 +84,88 @@ const optionsList = [
 ];
 
 const options = commandLineArgs(optionsList);
+const floatFormat = { minimumFractionDigits: 0, maximumFractionDigits: 12 };
 
 if (options.help) {
     showHelp();
 } else {
-    await loadTokens(`${options.tibet_api_uri}tokens`);
+    const tibetSwap = new TibetSwap(
+        options.tibet_api_uri,
+        options.tibet_analytics_api_uri,
+        floatFormat
+    );
+    await tibetSwap.loadTokenList();
 
-    if (options.command === "dump") {
-        await dumpSwaps(options);
-    } else if (options.command === "dump") {
-        await dumpSwaps(options);
+    if (options.command === "swaps") {
+        await dumpSwaps(options, tibetSwap);
+    } else if (options.command === "imp") {
+        await impermanence(options, tibetSwap);
     } else {
         console.error(`Unknown command ${options.command}`);
         showHelp();
     }
 }
 
-async function dumpSwaps(options) {
-    const swaps = await getSwaps(options, options.wallet_fingerprints);
+async function impermanence(options, tibetSwap) {
+    const swaps = await getSwaps(
+        options,
+        options.wallet_fingerprints,
+        tibetSwap
+    );
 
     if (!swaps) {
         console.error("Could not connect to wallet");
-    } else {
-        swaps.forEach((swap) => {
-            if (options.json) {
-                console.log(JSON.stringify(swap));
-            } else {
-                console.log(
-                    `Swapped ${swap.offered.xch} MOJO and ${swap.offered.token_amount} ${swap.offered.token.short_name} for ${swap.requested.token_amount} ${swap.requested.pair_name}`
-                );
-            }
-        });
+        return;
     }
+    // TODO - consolidate swaps by pair group by swap token sum(token_amount), sum(xch_amount)
+    // get current quote for each pair
+    for await (const swap of swaps) {
+        const quote = await tibetSwap.getQuote(
+            swap.offered.token.pair_id,
+            swap.requested.token_amount_mojo
+        );
+        console.log(
+            `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.requested.pair_name}`
+        );
+        console.log(
+            `Now worth ${quote.xch_out_string} XCH and ${quote.token_out_string} ${swap.offered.token.short_name}`
+        );
+        const netXch = (quote.xch_out - swap.offered.xch_amount).toLocaleString(
+            undefined,
+            floatFormat
+        );
+        const netToken = (
+            quote.token_out - swap.offered.token_amount
+        ).toLocaleString(undefined, floatFormat);
+        console.log(
+            `Net ${netXch} XCH and ${netToken} ${swap.offered.token.short_name}`
+        );
+        console.log("--------------------------------------------------");
+    }
+}
+
+async function dumpSwaps(options, tibetSwap) {
+    const swaps = await getSwaps(
+        options,
+        options.wallet_fingerprints,
+        tibetSwap,
+        floatFormat
+    );
+
+    if (!swaps) {
+        console.error("Could not connect to wallet");
+        return;
+    }
+
+    swaps.forEach((swap) => {
+        if (options.json) {
+            console.log(JSON.stringify(swap));
+        } else {
+            console.log(
+                `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.requested.pair_name}`
+            );
+        }
+    });
 }
 
 function showHelp() {

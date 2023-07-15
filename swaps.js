@@ -1,8 +1,12 @@
 import { ChiaDaemon } from "chia-daemon";
-import { getToken } from "./tibet.js";
 import _ from "lodash";
 
-export async function getSwaps(connection, fingerprints) {
+export async function getSwaps(
+    connection,
+    fingerprints,
+    tibetSwap,
+    floatFormat
+) {
     const chia = new ChiaDaemon(connection, "swap-utils");
     if (!(await chia.connect())) {
         return undefined;
@@ -11,7 +15,14 @@ export async function getSwaps(connection, fingerprints) {
     let swaps = [];
     try {
         for await (const fingerprint of fingerprints || [null]) {
-            swaps = swaps.concat(await getSwapsFromWallet(chia, fingerprint));
+            swaps = swaps.concat(
+                await getSwapsFromWallet(
+                    chia,
+                    fingerprint,
+                    tibetSwap,
+                    floatFormat
+                )
+            );
         }
     } finally {
         chia.disconnect();
@@ -20,7 +31,7 @@ export async function getSwaps(connection, fingerprints) {
     return swaps;
 }
 
-async function getSwapsFromWallet(chia, fingerprint) {
+async function getSwapsFromWallet(chia, fingerprint, tibetSwap, floatFormat) {
     // null signals just do the default wallet
     if (fingerprint !== null) {
         await chia.services.wallet.log_in({
@@ -48,7 +59,11 @@ async function getSwapsFromWallet(chia, fingerprint) {
                 item.is_my_offer &&
                 item.summary.offered.xch !== undefined
         )) {
-            const offeredPair = getOfferedPair(trade.summary.offered);
+            const offeredPair = getOfferedPair(
+                tibetSwap,
+                trade.summary.offered,
+                floatFormat
+            );
             // this filters out offers that are just XCH
             // also filters tokens that aren't on tibet-swap
             // can't be a swap without a token
@@ -56,7 +71,8 @@ async function getSwapsFromWallet(chia, fingerprint) {
             if (offeredPair.token !== undefined) {
                 const requestedToken = getRequestedToken(
                     trade.summary.requested,
-                    offeredPair.token.pair_name
+                    offeredPair.token.pair_name,
+                    floatFormat
                 );
                 swaps.push({
                     offered: offeredPair,
@@ -69,24 +85,39 @@ async function getSwapsFromWallet(chia, fingerprint) {
     return swaps;
 }
 
-function getRequestedToken(requested, pairName) {
+function getRequestedToken(requested, pairName, floatFormat) {
     const token = {};
     for (const field in requested) {
-        token.token_amount = requested[field];
+        token.token_amount = requested[field] / 1000.0;
+        token.token_amount_mojo = requested[field];
+        token.token_amount_string = token.token_amount.toLocaleString(
+            undefined,
+            floatFormat
+        );
         token.pair_name = pairName;
     }
 
     return token;
 }
 
-function getOfferedPair(offered) {
+function getOfferedPair(tibetSwap, offered, floatFormat) {
     const pair = {};
     for (const field in offered) {
         if (field === "xch") {
-            pair.xch = offered.xch;
+            pair.xch_amount = offered.xch / 10.0 ** 12;
+            pair.xch_amount_mojo = offered.xch;
+            pair.xch_amount_string = pair.xch_amount.toLocaleString(
+                undefined,
+                floatFormat
+            );
         } else {
-            pair.token_amount = offered[field];
-            pair.token = getToken(field);
+            pair.token_amount = offered[field] / 1000.0;
+            pair.token_amount_mojo = offered[field];
+            pair.token_amount_string = pair.token_amount.toLocaleString(
+                undefined,
+                floatFormat
+            );
+            pair.token = tibetSwap.getToken(field);
         }
     }
 
