@@ -9,22 +9,23 @@ const optionsList = [
         name: "command",
         type: String,
         defaultOption: true,
-        defaultValue: "dump",
-        description: "The command to run. (swaps and imp are supported)",
+        defaultValue: "imp",
+        description:
+            "The command to run. 'swaps' to list summarized swaps, 'imp' to show impermanent loss. Defaults to 'imp'.",
     },
     {
         name: "host",
         alias: "w",
         type: String,
         defaultValue: "localhost",
-        description: "The host of the wallet.",
+        description: "The chia daemon host. (localhost)",
     },
     {
         name: "port",
         alias: "s",
         type: Number,
         defaultValue: 55400,
-        description: "The port of the wallet.",
+        description: "The chia daemon port. (55400)",
     },
     {
         name: "key_path",
@@ -45,8 +46,7 @@ const optionsList = [
         multiple: true,
         alias: "f",
         type: Number,
-        description:
-            "The list of wallet fingerprints to connect to. If left out will use the default.",
+        description: "Optional list of wallet fingerprints to use.",
     },
     {
         name: "tibet_api_uri",
@@ -119,36 +119,45 @@ async function impermanence(options, tibetSwap) {
         return;
     }
 
-    let totalNetXchAmount = 0;
+    // for each summarized swap get a current quote
     for await (const swap of swaps) {
         const quote = await tibetSwap.getQuote(
             swap.pair_id,
             swap.requested.token_amount_mojo
         );
-        console.log(
-            `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
-        );
-        console.log(
-            `Now worth ${quote.xch_out_string} XCH and ${quote.token_out_string} ${swap.offered.token.short_name}`
-        );
-        const netXchAmount = quote.xch_out - swap.offered.xch_amount;
-        totalNetXchAmount += netXchAmount;
-        const netXch = netXchAmount.toLocaleString(undefined, floatFormat);
-
-        const netToken = (
-            quote.token_out - swap.offered.token_amount
-        ).toLocaleString(undefined, floatFormat);
-        console.log(
-            `Net ${netXch} XCH and ${netToken} ${swap.offered.token.short_name}`
-        );
-        console.log("--------------------------------------------------");
+        swap.quote = quote;
     }
-    console.log(
-        `Total net ${totalNetXchAmount.toLocaleString(
-            undefined,
-            floatFormat
-        )} XCH`
-    );
+
+    if (options.json) {
+        console.log(JSON.stringify(swaps));
+    } else {
+        let totalNetXchAmount = 0;
+        for await (const swap of swaps) {
+            console.log(
+                `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
+            );
+            console.log(
+                `Now worth ${swap.quote.xch_out_string} XCH and ${swap.quote.token_out_string} ${swap.offered.token.short_name}`
+            );
+            const netXchAmount = swap.quote.xch_out - swap.offered.xch_amount;
+            totalNetXchAmount += netXchAmount;
+            const netXch = netXchAmount.toLocaleString(undefined, floatFormat);
+
+            const netToken = (
+                swap.quote.token_out - swap.offered.token_amount
+            ).toLocaleString(undefined, floatFormat);
+            console.log(
+                `Net ${netXch} XCH and ${netToken} ${swap.offered.token.short_name}`
+            );
+            console.log("--------------------------------------------------");
+        }
+        console.log(
+            `Total net ${totalNetXchAmount.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH`
+        );
+    }
 }
 
 async function dumpSwaps(options, tibetSwap) {
@@ -164,15 +173,15 @@ async function dumpSwaps(options, tibetSwap) {
         return;
     }
 
-    swaps.forEach((swap) => {
-        if (options.json) {
-            console.log(JSON.stringify(swap));
-        } else {
+    if (options.json) {
+        console.log(JSON.stringify(swaps));
+    } else {
+        swaps.forEach((swap) => {
             console.log(
                 `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
             );
-        }
-    });
+        });
+    }
 }
 
 function showHelp() {

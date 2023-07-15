@@ -22,15 +22,16 @@ chia swap-utils
 
 Options
 
-  --command string                       The command to run. (swaps and imp are 
-                                         supported)                             
-  -w, --host string                      The host of the wallet.                
-  -s, --port number                      The port of the wallet.                
+  --command string                       The command to run. 'swaps' to list    
+                                         summarized swaps, 'imp' to show        
+                                         impermanent loss. Defaults to 'imp'.
+  -w, --host string                      The chia daemon host. 
+                                         (localhost)                
+  -s, --port number                      The chia daemon port. (55400)
   -k, --key_path string                  The path to the wallet private key.    
   -c, --cert_path string                 The path to the wallet certificate.    
-  -f, --wallet_fingerprints number[]     The list of wallet fingerprints to     
-                                         connect to. If left out will use the   
-                                         default.                               
+  -f, --wallet_fingerprints number[]     Optional list of wallet fingerprints to     
+                                         use.
   -a, --tibet_api_uri string             The root uri of the tibet api          
   -i, --tibet_analytics_api_uri string   The root uri of the tibet analytics    
                                          api                                    
