@@ -40,8 +40,8 @@ export default class TibetSwap {
         const tokenOut =
             (userLiquidity * quote.token_reserve) / quote.liquidity;
         const xchOut =
-            (userLiquidity + userLiquidity * quote.xch_reserve) /
-            quote.liquidity;
+            userLiquidity +
+            (userLiquidity * quote.xch_reserve) / quote.liquidity;
 
         return {
             quote: quote,

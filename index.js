@@ -110,7 +110,8 @@ async function impermanence(options, tibetSwap) {
     const swaps = await getSwaps(
         options,
         options.wallet_fingerprints,
-        tibetSwap
+        tibetSwap,
+        floatFormat
     );
 
     if (!swaps) {
@@ -121,11 +122,11 @@ async function impermanence(options, tibetSwap) {
     // get current quote for each pair
     for await (const swap of swaps) {
         const quote = await tibetSwap.getQuote(
-            swap.offered.token.pair_id,
+            swap.pair_id,
             swap.requested.token_amount_mojo
         );
         console.log(
-            `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.requested.pair_name}`
+            `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
         );
         console.log(
             `Now worth ${quote.xch_out_string} XCH and ${quote.token_out_string} ${swap.offered.token.short_name}`
@@ -162,7 +163,7 @@ async function dumpSwaps(options, tibetSwap) {
             console.log(JSON.stringify(swap));
         } else {
             console.log(
-                `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.requested.pair_name}`
+                `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
             );
         }
     });
