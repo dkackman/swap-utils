@@ -22,7 +22,7 @@ export async function getSwaps(
         }
 
         // consolidate swaps by pair
-        swaps = consolidateSwaps(swaps, floatFormat);
+        swaps = consolidateSwaps(swaps);
         swaps.forEach((swap) => {
             swap.requested.token_amount_string =
                 swap.requested.token_amount.toLocaleString(
@@ -44,7 +44,7 @@ export async function getSwaps(
     }
 }
 
-function consolidateSwaps(swaps, floatFormat) {
+function consolidateSwaps(swaps) {
     let grouped = _.reduce(
         swaps,
         (result, value) => {
