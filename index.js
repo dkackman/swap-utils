@@ -62,13 +62,13 @@ async function impermanence(options, tibetSwap) {
             const netTokenAmount =
                 swap.currentValue.token_amount - swap.offered.token_amount;
             // the current market value of the net amount of token
-            const tokenQuote = await tibetSwap.estimatePairValue(
+            const pairValue = await tibetSwap.estimatePairValue(
                 swap.pair_id,
                 netTokenAmount
             );
             // the total investment returns for this pair
             // net change of xch + the current market value in xch of the net token amount
-            const netXchReturns = netXchAmount + tokenQuote.xch_amount;
+            const netXchReturns = netXchAmount + pairValue.xch_amount;
             totalNetXchReturns += netXchReturns;
 
             printSwap(swap);
@@ -91,7 +91,7 @@ async function impermanence(options, tibetSwap) {
                     floatFormat
                 )} ${
                     swap.offered.token.short_name
-                } (worth ${tokenQuote.xch_amount.toLocaleString(
+                } (worth ${pairValue.xch_amount.toLocaleString(
                     undefined,
                     floatFormat
                 )} XCH)`
