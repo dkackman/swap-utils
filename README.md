@@ -20,9 +20,10 @@ It's not published on npmjs yet, so you'll need to run it from the repo root wit
 ```bash
 chia swap-utils
 
-  Shows summarized swaps for the given wallet fingerprints. The wallet must be running and unlocked.                                                         
+  Shows summarized swaps and impermanent loss for the given wallet              
+  fingerprints. The wallet must be running and unlocked.  
 
-Options
+Options (defaults to Tibet production and localhost chia)
 
   --command string                       The command to run. 'swaps' to list    
                                          summarized swaps, 'imp' to show        

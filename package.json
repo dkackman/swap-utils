@@ -1,13 +1,29 @@
 {
     "name": "swap-utils",
-    "version": "1.0.0",
-    "description": "",
+    "version": "0.1.0",
+    "description": "Some simple utilities for working with chia and TibetSwap",
     "main": "index.js",
     "scripts": {
-        "dump": "npx . dump"
+        "swaps": "npx . swaps",
+        "imp": "npx . imp"
     },
-    "author": "",
-    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dkackman/swap-utils.git"
+    },
+    "bugs": {
+        "url": "https://github.com/dkackman/swap-utils/issues"
+    },
+    "keywords": [
+        "chia",
+        "tibet",
+        "tibet-swap",
+        "TibetSwap",
+        "impermanent-loss"
+    ],
+    "homepage": "https://github.com/dkackman/swap-utils",
+    "author": "dkackman",
+    "license": "Apache-2.0",
     "type": "module",
     "dependencies": {
         "chia-daemon": "^0.10.1",
@@ -18,8 +34,6 @@
     "devDependencies": {
         "eslint": "^8.32.0",
         "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-security": "^1.6.0",
-        "eslint-plugin-you-dont-need-lodash-underscore": "^6.12.0",
         "jshint": "^2.13.6",
         "prettier": "^2.8.3"
     },
