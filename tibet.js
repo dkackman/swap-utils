@@ -37,11 +37,15 @@ export default class TibetSwap {
 
         const output_reserve = pair.xch_reserve;
         const input_reserve = pair.token_reserve;
-        const input_amount = Math.abs(amount);
+
+        // input_amount should be passed in token units - convert to mojo
+        // also take absolute value of amount in case it's negative
+        const input_amount = Math.abs(amount) * 1000;
         let output_amount =
             (993 * input_amount * output_reserve) /
             (993 * input_amount + 1000 * input_reserve);
 
+        // add the sign back in to account for loss value
         output_amount *= Math.sign(amount);
 
         return {
