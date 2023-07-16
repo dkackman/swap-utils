@@ -1,10 +1,9 @@
 import _ from "lodash";
 
 export default class TibetSwap {
-    constructor(apiUri, analyticsUri, floatFormat) {
+    constructor(apiUri, analyticsUri) {
         this.apiUri = apiUri;
         this.analyticsUri = analyticsUri;
-        this.floatFormat = floatFormat;
     }
 
     async loadTokenList() {
@@ -32,10 +31,30 @@ export default class TibetSwap {
         };
     }
 
-    async getQuote(token, userLiquidity) {
+    async getTokenQuote(pairId, amount) {
+        const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
+        const quote = await pairResponse.json();
+
+        const output_reserve = quote.xch_reserve;
+        const input_reserve = quote.token_reserve;
+        const input_amount = Math.abs(amount);
+        let output_amount =
+            (993 * input_amount * output_reserve) /
+            (993 * input_amount + 1000 * input_reserve);
+
+        output_amount *= Math.sign(amount);
+
+        return {
+            quote: quote,
+            xch_out: output_amount / 10 ** 12,
+            xch_out_mojo: output_amount,
+        };
+    }
+
+    async getLiquidityValue(pairId, userLiquidity) {
         // https://twitter.com/yakuh1t0/status/1679680380469940224
-        const quoteResponse = await fetch(`${this.analyticsUri}/pair/${token}`);
-        const quote = await quoteResponse.json();
+        const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
+        const quote = await pairResponse.json();
 
         const tokenOut =
             (userLiquidity * quote.token_reserve) / quote.liquidity;
@@ -47,16 +66,8 @@ export default class TibetSwap {
             quote: quote,
             token_out: tokenOut / 1000.0,
             token_out_mojo: tokenOut,
-            token_out_string: (tokenOut / 1000.0).toLocaleString(
-                undefined,
-                this.floatFormat
-            ),
             xch_out: xchOut / 10 ** 12,
             xch_out_mojo: xchOut,
-            xch_out_string: (xchOut / 10 ** 12).toLocaleString(
-                undefined,
-                this.floatFormat
-            ),
         };
     }
 }

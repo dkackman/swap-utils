@@ -1,11 +1,10 @@
 import { ChiaDaemon } from "chia-daemon";
 import _ from "lodash";
 
-export async function getSwaps(
+export async function getLiquidityAdditions(
     connection,
     fingerprints,
-    tibetSwap,
-    floatFormat
+    tibetSwap
 ) {
     const chia = new ChiaDaemon(connection, "swap-utils");
     if (!(await chia.connect())) {
@@ -23,20 +22,6 @@ export async function getSwaps(
 
         // consolidate swaps by pair
         swaps = consolidateSwaps(swaps);
-        swaps.forEach((swap) => {
-            swap.requested.token_amount_string =
-                swap.requested.token_amount.toLocaleString(
-                    undefined,
-                    floatFormat
-                );
-            swap.offered.xch_amount_string =
-                swap.offered.xch_amount.toLocaleString(undefined, floatFormat);
-            swap.offered.token_amount_string =
-                swap.offered.token_amount.toLocaleString(
-                    undefined,
-                    floatFormat
-                );
-        });
 
         return swaps;
     } finally {
@@ -92,7 +77,7 @@ function consolidateSwaps(swaps) {
     return _.values(grouped);
 }
 
-async function getSwapsFromWallet(chia, fingerprint, tibetSwap, floatFormat) {
+async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
     // null signals just do the default wallet
     if (fingerprint !== null) {
         await chia.services.wallet.log_in({
@@ -122,8 +107,7 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap, floatFormat) {
         )) {
             const offeredPair = getOfferedPair(
                 tibetSwap,
-                trade.summary.offered,
-                floatFormat
+                trade.summary.offered
             );
             // this filters out offers that are just XCH
             // also filters tokens that aren't on tibet-swap
@@ -132,8 +116,7 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap, floatFormat) {
             if (offeredPair.token !== undefined) {
                 const requestedToken = getRequestedToken(
                     trade.summary.requested,
-                    offeredPair.token.pair_name,
-                    floatFormat
+                    offeredPair.token.pair_name
                 );
                 swaps.push({
                     pair_name: offeredPair.token.pair_name,
@@ -148,15 +131,11 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap, floatFormat) {
     return swaps;
 }
 
-function getRequestedToken(requested, pairName, floatFormat) {
+function getRequestedToken(requested) {
     const token = {};
     for (const field in requested) {
         token.token_amount = requested[field] / 1000.0;
         token.token_amount_mojo = requested[field];
-        token.token_amount_string = token.token_amount.toLocaleString(
-            undefined,
-            floatFormat
-        );
     }
 
     return token;

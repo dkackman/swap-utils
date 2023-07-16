@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import commandLineUsage from "command-line-usage";
 import commandLineArgs from "command-line-args";
-import { getSwaps } from "./swaps.js";
+import { getLiquidityAdditions } from "./swaps.js";
 import TibetSwap from "./tibet.js";
 
 const optionsList = [
@@ -91,8 +91,7 @@ if (options.help) {
 } else {
     const tibetSwap = new TibetSwap(
         options.tibet_api_uri,
-        options.tibet_analytics_api_uri,
-        floatFormat
+        options.tibet_analytics_api_uri
     );
     await tibetSwap.loadTokenList();
 
@@ -107,11 +106,10 @@ if (options.help) {
 }
 
 async function impermanence(options, tibetSwap) {
-    const swaps = await getSwaps(
+    const swaps = await getLiquidityAdditions(
         options,
         options.wallet_fingerprints,
-        tibetSwap,
-        floatFormat
+        tibetSwap
     );
 
     if (!swaps) {
@@ -121,7 +119,7 @@ async function impermanence(options, tibetSwap) {
 
     // for each summarized swap get a current quote
     for await (const swap of swaps) {
-        const quote = await tibetSwap.getQuote(
+        const quote = await tibetSwap.getLiquidityValue(
             swap.pair_id,
             swap.requested.token_amount_mojo
         );
@@ -131,28 +129,71 @@ async function impermanence(options, tibetSwap) {
     if (options.json) {
         console.log(JSON.stringify(swaps));
     } else {
-        let totalNetXchAmount = 0;
+        let totalNetXchReturns = 0;
         for await (const swap of swaps) {
-            console.log(
-                `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
-            );
-            console.log(
-                `Now worth ${swap.quote.xch_out_string} XCH and ${swap.quote.token_out_string} ${swap.offered.token.short_name}`
-            );
+            // the change in xch amount from the addition to the removal
             const netXchAmount = swap.quote.xch_out - swap.offered.xch_amount;
-            totalNetXchAmount += netXchAmount;
-            const netXch = netXchAmount.toLocaleString(undefined, floatFormat);
+            // the change in token amount from the addition to the removal
+            const netTokenAmount =
+                swap.quote.token_out - swap.offered.token_amount;
+            // the current market value of the net amount of token
+            const tokenQuote = await tibetSwap.getTokenQuote(
+                swap.pair_id,
+                netTokenAmount
+            );
+            // the total investment returns for this pair
+            // net change of xch + the current market value in xch of the net token amount
+            const netXchReturns = netXchAmount + tokenQuote.xch_out;
+            totalNetXchReturns += netXchReturns;
 
-            const netToken = (
-                swap.quote.token_out - swap.offered.token_amount
-            ).toLocaleString(undefined, floatFormat);
             console.log(
-                `Net ${netXch} XCH and ${netToken} ${swap.offered.token.short_name}`
+                `Swapped ${swap.offered.xch_amount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} XCH and ${swap.offered.token_amount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} ${
+                    swap.offered.token.short_name
+                } for ${swap.requested.token_amount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} ${swap.pair_name}`
+            );
+            console.log(
+                `Now worth ${swap.quote.xch_out.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} XCH and ${swap.quote.token_out.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} ${swap.offered.token.short_name}`
+            );
+            console.log(
+                `Net change ${netXchAmount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} XCH and ${netTokenAmount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} ${
+                    swap.offered.token.short_name
+                } (worth ${tokenQuote.xch_out.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} XCH)`
+            );
+
+            console.log(
+                `Returns ${netXchReturns.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} XCH`
             );
             console.log("--------------------------------------------------");
         }
         console.log(
-            `Total net ${totalNetXchAmount.toLocaleString(
+            `Total returns ${totalNetXchReturns.toLocaleString(
                 undefined,
                 floatFormat
             )} XCH`
@@ -161,11 +202,10 @@ async function impermanence(options, tibetSwap) {
 }
 
 async function dumpSwaps(options, tibetSwap) {
-    const swaps = await getSwaps(
+    const swaps = await getLiquidityAdditions(
         options,
         options.wallet_fingerprints,
-        tibetSwap,
-        floatFormat
+        tibetSwap
     );
 
     if (!swaps) {
@@ -178,7 +218,18 @@ async function dumpSwaps(options, tibetSwap) {
     } else {
         swaps.forEach((swap) => {
             console.log(
-                `Swapped ${swap.offered.xch_amount_string} XCH and ${swap.offered.token_amount_string} ${swap.offered.token.short_name} for ${swap.requested.token_amount_string} ${swap.pair_name}`
+                `Swapped ${swap.offered.xch_amount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} XCH and ${swap.offered.token_amount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} ${
+                    swap.offered.token.short_name
+                } for ${swap.requested.token_amount.toLocaleString(
+                    undefined,
+                    floatFormat
+                )} ${swap.pair_name}`
             );
         });
     }
