@@ -54,10 +54,8 @@ async function impermanence(options, tibetSwap) {
         let totalNetXchReturns = 0;
         for await (const swap of swaps) {
             // the change in xch amount from the addition to the removal
-            // since the liquidity fee is burned on withdrawal factor it out
             const netXchAmount =
-                swap.currentValue.xch_amount -
-                (swap.offered.xch_amount + swap.liquidity_fee);
+                swap.currentValue.xch_amount - swap.offered.xch_amount;
             // the change in token amount from the addition to the removal
             const netTokenAmount =
                 swap.currentValue.token_amount - swap.offered.token_amount;
@@ -68,7 +66,9 @@ async function impermanence(options, tibetSwap) {
             );
             // the total investment returns for this pair
             // net change of xch + the current market value in xch of the net token amount
-            const netXchReturns = netXchAmount + pairValue.xch_amount;
+            // since the liquidity fee is burned on withdrawal factor it out
+            const netXchReturns =
+                netXchAmount + pairValue.xch_amount - swap.liquidity_fee;
             totalNetXchReturns += netXchReturns;
 
             printSwap(swap);
