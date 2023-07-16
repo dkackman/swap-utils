@@ -46,8 +46,8 @@ export default class TibetSwap {
 
         return {
             quote: quote,
-            xch_out: output_amount / 10 ** 12,
-            xch_out_mojo: output_amount,
+            xch_amount: output_amount / 10 ** 12,
+            xch_amount_mojo: output_amount,
         };
     }
 
@@ -64,10 +64,10 @@ export default class TibetSwap {
 
         return {
             quote: quote,
-            token_out: tokenOut / 1000.0,
-            token_out_mojo: tokenOut,
-            xch_out: xchOut / 10 ** 12,
-            xch_out_mojo: xchOut,
+            token_amount: tokenOut / 1000.0,
+            token_amount_mojo: tokenOut,
+            xch_amount: xchOut / 10 ** 12,
+            xch_amount_mojo: xchOut,
         };
     }
 }

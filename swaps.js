@@ -13,7 +13,7 @@ export async function getLiquidityAdditions(
 
     try {
         let swaps = [];
-        // get all swap offers from all wallets
+        // get all swap offers from all specified wallets
         for await (const fingerprint of fingerprints || [null]) {
             swaps = swaps.concat(
                 await getSwapsFromWallet(chia, fingerprint, tibetSwap)
@@ -21,9 +21,7 @@ export async function getLiquidityAdditions(
         }
 
         // consolidate swaps by pair
-        swaps = consolidateSwaps(swaps);
-
-        return swaps;
+        return consolidateSwaps(swaps);
     } finally {
         chia.disconnect();
     }
@@ -73,12 +71,13 @@ function consolidateSwaps(swaps) {
         {}
     );
 
-    // If you want the result as an array, not an object:
+    // return the resulting value array
     return _.values(grouped);
 }
 
 async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
     // null signals just do the default wallet
+    // otherwise we need to login to the wallet
     if (fingerprint !== null) {
         await chia.services.wallet.log_in({
             fingerprint: fingerprint,
@@ -99,20 +98,24 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
             file_contents: false,
         });
 
+        // SWAPS will be confirmed, offers that user has made
+        // ADDITIONS will offer two and only two items, one of which will be xch
         for await (const trade of allOffers.trade_records.filter(
             (item) =>
                 item.status === "CONFIRMED" &&
                 item.is_my_offer &&
-                item.summary.offered.xch !== undefined
+                item.summary.offered.xch !== undefined &&
+                Object.keys(item.summary.offered).length === 2
         )) {
             const offeredPair = getOfferedPair(
                 tibetSwap,
                 trade.summary.offered
             );
-            // this filters out offers that are just XCH
-            // also filters tokens that aren't on tibet-swap
-            // can't be a swap without a token
-            // (what if i offer a token and xch for an nft?)
+            // filter tokens that aren't on tibet-swap
+            // can't be a swap without a supported token
+            // (TODO what if i offer a token and xch for an nft?)
+            //
+            // ONLY DEALS WITH FOR ADDITIONS RIGHT NOW
             if (offeredPair.token !== undefined) {
                 const requestedToken = getRequestedToken(
                     trade.summary.requested,
@@ -134,6 +137,7 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
 function getRequestedToken(requested) {
     const token = {};
     for (const field in requested) {
+        // the token asset_id is the field name
         token.token_amount = requested[field] / 1000.0;
         token.token_amount_mojo = requested[field];
     }
@@ -148,6 +152,7 @@ function getOfferedPair(tibetSwap, offered) {
             pair.xch_amount = offered.xch / 10.0 ** 12;
             pair.xch_amount_mojo = offered.xch;
         } else {
+            // the token asset_id is the field name
             pair.token_amount = offered[field] / 1000.0;
             pair.token_amount_mojo = offered[field];
             pair.token = tibetSwap.getToken(field);

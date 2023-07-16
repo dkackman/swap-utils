@@ -132,10 +132,11 @@ async function impermanence(options, tibetSwap) {
         let totalNetXchReturns = 0;
         for await (const swap of swaps) {
             // the change in xch amount from the addition to the removal
-            const netXchAmount = swap.quote.xch_out - swap.offered.xch_amount;
+            const netXchAmount =
+                swap.quote.xch_amount - swap.offered.xch_amount;
             // the change in token amount from the addition to the removal
             const netTokenAmount =
-                swap.quote.token_out - swap.offered.token_amount;
+                swap.quote.token_amount - swap.offered.token_amount;
             // the current market value of the net amount of token
             const tokenQuote = await tibetSwap.getTokenQuote(
                 swap.pair_id,
@@ -143,7 +144,7 @@ async function impermanence(options, tibetSwap) {
             );
             // the total investment returns for this pair
             // net change of xch + the current market value in xch of the net token amount
-            const netXchReturns = netXchAmount + tokenQuote.xch_out;
+            const netXchReturns = netXchAmount + tokenQuote.xch_amount;
             totalNetXchReturns += netXchReturns;
 
             console.log(
@@ -161,10 +162,10 @@ async function impermanence(options, tibetSwap) {
                 )} ${swap.pair_name}`
             );
             console.log(
-                `Now worth ${swap.quote.xch_out.toLocaleString(
+                `Now worth ${swap.quote.xch_amount.toLocaleString(
                     undefined,
                     floatFormat
-                )} XCH and ${swap.quote.token_out.toLocaleString(
+                )} XCH and ${swap.quote.token_amount.toLocaleString(
                     undefined,
                     floatFormat
                 )} ${swap.offered.token.short_name}`
@@ -178,7 +179,7 @@ async function impermanence(options, tibetSwap) {
                     floatFormat
                 )} ${
                     swap.offered.token.short_name
-                } (worth ${tokenQuote.xch_out.toLocaleString(
+                } (worth ${tokenQuote.xch_amount.toLocaleString(
                     undefined,
                     floatFormat
                 )} XCH)`
