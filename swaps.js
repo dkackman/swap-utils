@@ -51,13 +51,17 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
         });
 
         // SWAPS will be confirmed, offers that user has made
-        // ADDITIONS will offer two and only two items, one of which will be xch
+        // ADDITIONS:
+        //        will offer two and only two items, one of which will be xch
+        //        and request only one item, which will NOT be xch
         for await (const trade of allOffers.trade_records.filter(
             (item) =>
                 item.status === "CONFIRMED" &&
                 item.is_my_offer &&
+                Object.keys(item.summary.offered).length === 2 &&
                 item.summary.offered.xch !== undefined &&
-                Object.keys(item.summary.offered).length === 2
+                Object.keys(item.summary.requested).length === 1 &&
+                item.summary.requested.xch === undefined
         )) {
             const offeredPair = getOfferedPair(
                 tibetSwap,
@@ -67,17 +71,35 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
             // can't be a swap without a supported token
             // (TODO what if i offer a token and xch for an nft?)
             //
-            // ONLY DEALS WITH FOR ADDITIONS RIGHT NOW
+            // ONLY DEALS WITH ADDITIONS RIGHT NOW
             if (offeredPair.token !== undefined) {
                 const requestedToken = getRequestedToken(
                     trade.summary.requested,
                     offeredPair.token.pair_name
                 );
+
+                // **
+                // if you add any fields here add them to the consolidateSwaps function
+                // **
                 swaps.push({
                     pair_name: offeredPair.token.pair_name,
                     pair_id: offeredPair.token.pair_id,
                     offered: offeredPair,
                     requested: requestedToken,
+                    // the amount of xch offered covers both the liquidity added and
+                    // the fee used to mint the liquidity token (burned on withdrawal)
+                    // the liquidity mint fee is the same as the amount of
+                    // the liquidity token requested (in mojo)
+                    liquidity_fee: requestedToken.token_amount_mojo / 10 ** 12,
+                    liquidity_fee_mojo: requestedToken.token_amount_mojo,
+                    // so net that out of the xch offered to get the liquidity added
+                    liquidity_xch_amount:
+                        (offeredPair.xch_amount_mojo -
+                            requestedToken.token_amount_mojo) /
+                        10 ** 12,
+                    liquidity_xch_amount_mojo:
+                        offeredPair.xch_amount_mojo -
+                        requestedToken.token_amount_mojo,
                 });
             }
         }
@@ -135,6 +157,11 @@ function consolidateSwaps(swaps) {
                         token_amount: 0,
                         token_amount_mojo: 0,
                     },
+                    liquidity_fee: 0,
+                    liquidity_fee_mojo: 0,
+
+                    liquidity_xch_amount: 0,
+                    liquidity_xch_amount_mojo: 0,
                 };
             }
 
@@ -152,6 +179,14 @@ function consolidateSwaps(swaps) {
                 value.requested.token_amount;
             result[value.pair_id].requested.token_amount_mojo +=
                 value.requested.token_amount_mojo;
+
+            result[value.pair_id].liquidity_fee += value.liquidity_fee;
+            result[value.pair_id].liquidity_fee_mojo +=
+                value.liquidity_fee_mojo;
+            result[value.pair_id].liquidity_xch_amount +=
+                value.liquidity_xch_amount;
+            result[value.pair_id].liquidity_xch_amount_mojo +=
+                value.liquidity_xch_amount_mojo;
 
             return result;
         },
