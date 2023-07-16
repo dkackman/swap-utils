@@ -27,54 +27,6 @@ export async function getLiquidityAdditions(
     }
 }
 
-function consolidateSwaps(swaps) {
-    let grouped = _.reduce(
-        swaps,
-        (result, value) => {
-            // this ensures we have only one object per pair
-            // and creates the starter object
-            if (!result[value.pair_id]) {
-                result[value.pair_id] = {
-                    pair_name: value.pair_name,
-                    pair_id: value.pair_id,
-                    offered: {
-                        token: value.offered.token,
-                        token_amount: 0,
-                        token_amount_mojo: 0,
-                        xch_amount: 0,
-                        xch_amount_mojo: 0,
-                    },
-                    requested: {
-                        token_amount: 0,
-                        token_amount_mojo: 0,
-                    },
-                };
-            }
-
-            // now sum up the values
-            result[value.pair_id].offered.token_amount +=
-                value.offered.token_amount;
-            result[value.pair_id].offered.token_amount_mojo +=
-                value.offered.token_amount_mojo;
-            result[value.pair_id].offered.xch_amount +=
-                value.offered.xch_amount;
-            result[value.pair_id].offered.xch_amount_mojo +=
-                value.offered.xch_amount_mojo;
-
-            result[value.pair_id].requested.token_amount +=
-                value.requested.token_amount;
-            result[value.pair_id].requested.token_amount_mojo +=
-                value.requested.token_amount_mojo;
-
-            return result;
-        },
-        {}
-    );
-
-    // return the resulting value array
-    return _.values(grouped);
-}
-
 async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
     // null signals just do the default wallet
     // otherwise we need to login to the wallet
@@ -160,4 +112,52 @@ function getOfferedPair(tibetSwap, offered) {
     }
 
     return pair;
+}
+
+function consolidateSwaps(swaps) {
+    let grouped = _.reduce(
+        swaps,
+        (result, value) => {
+            // this ensures we have only one object per pair
+            // and creates the starter object
+            if (!result[value.pair_id]) {
+                result[value.pair_id] = {
+                    pair_name: value.pair_name,
+                    pair_id: value.pair_id,
+                    offered: {
+                        token: value.offered.token,
+                        token_amount: 0,
+                        token_amount_mojo: 0,
+                        xch_amount: 0,
+                        xch_amount_mojo: 0,
+                    },
+                    requested: {
+                        token_amount: 0,
+                        token_amount_mojo: 0,
+                    },
+                };
+            }
+
+            // now sum up the values
+            result[value.pair_id].offered.token_amount +=
+                value.offered.token_amount;
+            result[value.pair_id].offered.token_amount_mojo +=
+                value.offered.token_amount_mojo;
+            result[value.pair_id].offered.xch_amount +=
+                value.offered.xch_amount;
+            result[value.pair_id].offered.xch_amount_mojo +=
+                value.offered.xch_amount_mojo;
+
+            result[value.pair_id].requested.token_amount +=
+                value.requested.token_amount;
+            result[value.pair_id].requested.token_amount_mojo +=
+                value.requested.token_amount_mojo;
+
+            return result;
+        },
+        {}
+    );
+
+    // return the resulting value array
+    return _.values(grouped);
 }
