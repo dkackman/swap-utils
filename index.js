@@ -62,7 +62,7 @@ async function impermanence(options, tibetSwap) {
             const netTokenAmount =
                 swap.currentValue.token_amount - swap.offered.token_amount;
             // the current market value of the net amount of token
-            const tokenQuote = await tibetSwap.getTokenQuote(
+            const tokenQuote = await tibetSwap.estimatePairValue(
                 swap.pair_id,
                 netTokenAmount
             );

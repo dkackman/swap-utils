@@ -31,7 +31,7 @@ export default class TibetSwap {
         };
     }
 
-    async getTokenQuote(pairId, amount) {
+    async estimatePairValue(pairId, amount) {
         const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
         const pair = await pairResponse.json();
 
