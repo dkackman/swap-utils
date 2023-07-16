@@ -33,10 +33,10 @@ export default class TibetSwap {
 
     async getTokenQuote(pairId, amount) {
         const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
-        const quote = await pairResponse.json();
+        const pair = await pairResponse.json();
 
-        const output_reserve = quote.xch_reserve;
-        const input_reserve = quote.token_reserve;
+        const output_reserve = pair.xch_reserve;
+        const input_reserve = pair.token_reserve;
         const input_amount = Math.abs(amount);
         let output_amount =
             (993 * input_amount * output_reserve) /
@@ -45,7 +45,7 @@ export default class TibetSwap {
         output_amount *= Math.sign(amount);
 
         return {
-            quote: quote,
+            pair: pair,
             xch_amount: output_amount / 10 ** 12,
             xch_amount_mojo: output_amount,
         };
@@ -54,16 +54,14 @@ export default class TibetSwap {
     async getLiquidityValue(pairId, userLiquidity) {
         // https://twitter.com/yakuh1t0/status/1679680380469940224
         const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
-        const quote = await pairResponse.json();
+        const pair = await pairResponse.json();
 
-        const tokenOut =
-            (userLiquidity * quote.token_reserve) / quote.liquidity;
+        const tokenOut = (userLiquidity * pair.token_reserve) / pair.liquidity;
         const xchOut =
-            userLiquidity +
-            (userLiquidity * quote.xch_reserve) / quote.liquidity;
+            userLiquidity + (userLiquidity * pair.xch_reserve) / pair.liquidity;
 
         return {
-            quote: quote,
+            pair: pair,
             token_amount: tokenOut / 1000.0,
             token_amount_mojo: tokenOut,
             xch_amount: xchOut / 10 ** 12,

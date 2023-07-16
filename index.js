@@ -36,13 +36,13 @@ async function impermanence(options, tibetSwap) {
         return;
     }
 
-    // for each summarized swap get a current quote
+    // for each summarized swap get the pair
     for await (const swap of swaps) {
-        const quote = await tibetSwap.getLiquidityValue(
+        const pair = await tibetSwap.getLiquidityValue(
             swap.pair_id,
             swap.requested.token_amount_mojo
         );
-        swap.quote = quote;
+        swap.pair = pair;
     }
 
     if (options.json) {
@@ -51,11 +51,10 @@ async function impermanence(options, tibetSwap) {
         let totalNetXchReturns = 0;
         for await (const swap of swaps) {
             // the change in xch amount from the addition to the removal
-            const netXchAmount =
-                swap.quote.xch_amount - swap.offered.xch_amount;
+            const netXchAmount = swap.pair.xch_amount - swap.offered.xch_amount;
             // the change in token amount from the addition to the removal
             const netTokenAmount =
-                swap.quote.token_amount - swap.offered.token_amount;
+                swap.pair.token_amount - swap.offered.token_amount;
             // the current market value of the net amount of token
             const tokenQuote = await tibetSwap.getTokenQuote(
                 swap.pair_id,
@@ -81,10 +80,10 @@ async function impermanence(options, tibetSwap) {
                 )} ${swap.pair_name}`
             );
             console.log(
-                `Now worth ${swap.quote.xch_amount.toLocaleString(
+                `Now worth ${swap.pair.xch_amount.toLocaleString(
                     undefined,
                     floatFormat
-                )} XCH and ${swap.quote.token_amount.toLocaleString(
+                )} XCH and ${swap.pair.token_amount.toLocaleString(
                     undefined,
                     floatFormat
                 )} ${swap.offered.token.short_name}`
