@@ -97,7 +97,7 @@ export function showHelp() {
         {
             header: "chia swap-utils",
             content:
-                "Shows summarized swaps and impermanent loss for the given wallet fingerprints. The wallet must be running and unlocked.",
+                "Shows summarized swaps and estimated impermanent loss for the given wallet fingerprints. The wallet must be running and unlocked.",
         },
         {
             header: "Commands",

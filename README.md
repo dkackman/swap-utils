@@ -1,6 +1,6 @@
 # swap-utils
 
-A small utility to show impermanent loss for swaps made on the [tibet swap liquidity provider](https://v2.tibetswap.io/).
+A small utility to show estimated impermanent loss for swaps made on the [tibet swap liquidity provider](https://v2.tibetswap.io/).
 
 ### Thanks [yakuhito.xch](https://twitter.com/yakuh1t0)
 
@@ -15,12 +15,12 @@ npm install
 
 ## Usage
 
-It's not published on npmjs yet, so you'll need to run it from the repo root with `npx .`
+It's not published on npmjs, so you'll need to run it from the repo root with `npx .`
 
 ```bash
 chia swap-utils
 
-  Shows summarized swaps and impermanent loss for the given wallet
+  Shows summarized swaps and estimated impermanent loss for the given wallet
   fingerprints. The wallet must be running and unlocked.
 
 Commands
