@@ -1,22 +1,30 @@
 import { ChiaDaemon } from "chia-daemon";
 import _ from "lodash";
 
-export async function getLiquidityAdditions(
-    connection,
-    fingerprints,
-    tibetSwap
-) {
-    const chia = new ChiaDaemon(connection, "swap-utils");
+export async function getLiquidityAdditions(options, fingerprints, tibetSwap) {
+    const chia = new ChiaDaemon(options, "swap-utils");
     if (!(await chia.connect())) {
         return undefined;
     }
 
     try {
         let swaps = [];
+        const tokenFilter =
+            options.token === undefined
+                ? () => true
+                : (token) =>
+                      token.short_name.toUpperCase() ===
+                      options.token.toUpperCase();
+
         // get all swap offers from all specified wallets
         for await (const fingerprint of fingerprints || [null]) {
             swaps = swaps.concat(
-                await getSwapsFromWallet(chia, fingerprint, tibetSwap)
+                await getSwapsFromWallet(
+                    chia,
+                    fingerprint,
+                    tibetSwap,
+                    tokenFilter
+                )
             );
         }
 
@@ -27,7 +35,7 @@ export async function getLiquidityAdditions(
     }
 }
 
-async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
+async function getSwapsFromWallet(chia, fingerprint, tibetSwap, tokenFilter) {
     // null signals just do the default wallet
     // otherwise we need to login to the wallet
     if (fingerprint !== null) {
@@ -72,7 +80,10 @@ async function getSwapsFromWallet(chia, fingerprint, tibetSwap) {
             // (TODO what if i offer a token and xch for an nft?)
             //
             // ONLY DEALS WITH ADDITIONS RIGHT NOW
-            if (offeredPair.token !== undefined) {
+            if (
+                offeredPair.token !== undefined &&
+                tokenFilter(offeredPair.token)
+            ) {
                 const requestedToken = getRequestedToken(
                     trade.summary.requested,
                     offeredPair.token.pair_name

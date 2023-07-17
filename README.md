@@ -20,31 +20,30 @@ It's not published on npmjs yet, so you'll need to run it from the repo root wit
 ```bash
 chia swap-utils
 
-  Shows summarized swaps and impermanent loss for the given wallet              
-  fingerprints. The wallet must be running and unlocked.  
+  Shows summarized swaps and impermanent loss for the given wallet
+  fingerprints. The wallet must be running and unlocked.
+
+Commands
+
+  --command string   The command to run:
+                     swaps List summarized swaps.
+                     imp Show impermanent loss.
 
 Options (defaults to Tibet production and localhost chia)
 
-  --command string                       The command to run. 'swaps' to list    
-                                         summarized swaps, 'imp' to show        
-                                         impermanent loss. Defaults to 'imp'.
-  -w, --host string                      The chia daemon host. 
-                                         (localhost)                
-  -s, --port number                      The chia daemon port. (55400)
-  -k, --key_path string                  The path to the daemon private key.    
-  -c, --cert_path string                 The path to the daemon certificate.    
-  -f, --wallet_fingerprints number[]     Optional list of wallet fingerprints to     
-                                         use.
-  -a, --tibet_api_uri string             The root uri of the tibet api          
-  -i, --tibet_analytics_api_uri string   The root uri of the tibet analytics    
-                                         api                                    
-  -t, --timeout_seconds number           The timeout in seconds for the daemon  
-                                         connection.                            
-  -j, --json                             Return results as json.                
-  -h, --help                             Display this usage guide.              
+  -n, --token token symbol               Limit the output to this token.
+  -d, --host string                      The chia daemon host. (localhost)
+  -p, --port number                      The chia daemon port. (55400)
+  -k, --key_path string                  The path to the daemon private key.
+  -c, --cert_path string                 The path to the daemon certificate.
+  -f, --wallet_fingerprints number[]     Optional list of wallet fingerprints.
+  -a, --tibet_api_uri string             The uri of the tibet api
+  -i, --tibet_analytics_api_uri string   The uri of the tibet analytics api
+  -t, --timeout_seconds number           The timeout for the wallet connection.
+  -j, --json                             Return results as json.
+  -h, --help                             Display this usage guide.
 
-  Project home: https://github.com/dkackman/swap-utils 
-
+  Project home: https://github.com/dkackman/swap-utils
 ```
 
 ## Examples

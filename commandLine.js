@@ -1,25 +1,35 @@
 import commandLineUsage from "command-line-usage";
 import commandLineArgs from "command-line-args";
 
-const optionsList = [
+const commandList = [
     {
         name: "command",
         type: String,
         defaultOption: true,
         defaultValue: "imp",
         description:
-            "The command to run. 'swaps' to list summarized swaps, 'imp' to show impermanent loss. Defaults to 'imp'.",
+            "The command to run:\nswaps\tList summarized swaps.\nimp\tShow impermanent loss.",
+    },
+];
+const optionsList = [
+    {
+        name: "token",
+        alias: "n",
+        type: String,
+        defaultValue: undefined,
+        typeLabel: "(token symbol)",
+        description: "Limit the output to this token.",
     },
     {
         name: "host",
-        alias: "w",
+        alias: "d",
         type: String,
         defaultValue: "localhost",
         description: "The chia daemon host. (localhost)",
     },
     {
         name: "port",
-        alias: "s",
+        alias: "p",
         type: Number,
         defaultValue: 55400,
         description: "The chia daemon port. (55400)",
@@ -43,28 +53,28 @@ const optionsList = [
         multiple: true,
         alias: "f",
         type: Number,
-        description: "Optional list of wallet fingerprints to use.",
+        description: "Optional list of wallet fingerprints.",
     },
     {
         name: "tibet_api_uri",
         alias: "a",
         type: String,
         defaultValue: "https://api.v2.tibetswap.io",
-        description: "The root uri of the tibet api",
+        description: "The uri of the tibet api",
     },
     {
         name: "tibet_analytics_api_uri",
         alias: "i",
         type: String,
         defaultValue: "https://api.info.v2.tibetswap.io",
-        description: "The root uri of the tibet analytics api",
+        description: "The uri of the tibet analytics api",
     },
     {
         name: "timeout_seconds",
         alias: "t",
         type: Number,
         defaultValue: 30,
-        description: "The timeout in seconds for the wallet connection.",
+        description: "The timeout for the wallet connection.",
     },
     {
         name: "json",
@@ -80,7 +90,7 @@ const optionsList = [
     },
 ];
 
-export const options = commandLineArgs(optionsList);
+export const options = commandLineArgs(commandList.concat(optionsList));
 
 export function showHelp() {
     const usage = commandLineUsage([
@@ -88,6 +98,10 @@ export function showHelp() {
             header: "chia swap-utils",
             content:
                 "Shows summarized swaps and impermanent loss for the given wallet fingerprints. The wallet must be running and unlocked.",
+        },
+        {
+            header: "Commands",
+            optionList: commandList,
         },
         {
             header: "Options (defaults to Tibet production and localhost chia)",
