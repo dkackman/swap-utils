@@ -25,6 +25,10 @@ export default class TibetSwap {
         }
 
         const token = _.find(this.tokens, { asset_id });
+        if (token === undefined) {
+            return undefined;
+        }
+
         return {
             ...token,
             pair_name: `TIBET-${token.short_name}-XCH`,
