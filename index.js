@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { getLiquidityAdditions } from "./swaps.js";
+import { getLiquiditySwaps } from "./swaps.js";
 import TibetSwap from "./tibet.js";
 import { options, showHelp } from "./commandLine.js";
+import _ from "lodash";
 
 const floatFormat = {
     minimumFractionDigits: 0,
@@ -28,7 +29,7 @@ if (options.help) {
 }
 
 async function impermanence(options, tibetSwap) {
-    const swaps = await getLiquidityAdditions(
+    const swaps = await getLiquiditySwaps(
         options,
         options.wallet_fingerprints,
         tibetSwap
@@ -115,7 +116,7 @@ async function impermanence(options, tibetSwap) {
 }
 
 async function dumpSwaps(options, tibetSwap) {
-    const swaps = await getLiquidityAdditions(
+    const swaps = await getLiquiditySwaps(
         options,
         options.wallet_fingerprints,
         tibetSwap
@@ -134,18 +135,34 @@ async function dumpSwaps(options, tibetSwap) {
 }
 
 function printSwap(swap) {
-    console.log(
-        `Swapped ${swap.offered.xch_amount.toLocaleString(
-            undefined,
-            floatFormat
-        )} XCH and ${swap.offered.token_amount.toLocaleString(
-            undefined,
-            floatFormat
-        )} ${
-            swap.offered.token.short_name
-        } for ${swap.requested.token_amount.toLocaleString(
-            undefined,
-            floatFormat
-        )} ${swap.pair_name}`
-    );
+    if (_.get(swap, "offered.xch_amount", 0) > 0) {
+        console.log(
+            `Added ${swap.offered.xch_amount.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH and ${swap.offered.token_amount.toLocaleString(
+                undefined,
+                floatFormat
+            )} ${
+                swap.offered.token.short_name
+            } and received ${swap.requested.token_amount.toLocaleString(
+                undefined,
+                floatFormat
+            )} ${swap.pair_name}`
+        );
+    } else if (_.get(swap, "requested.xch_amount", 0) > 0) {
+        console.log(
+            `Removed ${swap.offered.token_amount.toLocaleString(
+                undefined,
+                floatFormat
+            )} ${swap.pair_name} and received
+            ${swap.requested.xch_amount.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH and ${swap.requested.token_amount.toLocaleString(
+                undefined,
+                floatFormat
+            )}`
+        );
+    }
 }
