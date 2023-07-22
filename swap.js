@@ -1,53 +1,43 @@
 import _ from "lodash";
+import { createAmountFromMojo, addAmounts } from "./pair_amount.js";
 
 export default class Swap {
     constructor(pair) {
         this.pair = pair;
     }
 
-    asAddition(requestedAmount) {
-        // **
-        // if you add any fields here add them to the consolidateSwaps function
-        // **
+    asAddition(offeredAmount, requestedAmount) {
+        // the amount of xch offered covers both the liquidity added and
+        // the fee used to mint the liquidity token (burned on withdrawal)
+        // the liquidity mint fee is the same as the amount of
+        // the liquidity token requested (in mojo)
+        const fee = createAmountFromMojo(
+            requestedAmount.token_amount_mojo,
+            offeredAmount.xch_amount_mojo - requestedAmount.token_amount_mojo
+        );
         return {
             type: "addition",
-            pair_name: this.pair.token.pair_name,
-            pair_id: this.pair.token.pair_id,
-            offered: this.pair,
+            pair: this.pair,
+            offered: offeredAmount,
             requested: requestedAmount,
-            // the amount of xch offered covers both the liquidity added and
-            // the fee used to mint the liquidity token (burned on withdrawal)
-            // the liquidity mint fee is the same as the amount of
-            // the liquidity token requested (in mojo)
-            liquidity_fee: requestedAmount.token_amount_mojo / 10 ** 12,
-            liquidity_fee_mojo: requestedAmount.token_amount_mojo,
-            // so net that out of the xch offered to get the liquidity added
-            liquidity_xch_amount:
-                (this.pair.xch_amount_mojo -
-                    requestedAmount.token_amount_mojo) /
-                10 ** 12,
-            liquidity_xch_amount_mojo:
-                this.pair.xch_amount_mojo - requestedAmount.token_amount_mojo,
+            liquidity_fee: fee,
         };
     }
 
-    asRemoval(offeredAmount) {
+    asRemoval(offeredAmount, requestedAmount) {
         // **
         // if you add any fields here add them to the consolidateSwaps function
         // **
         return {
             type: "removal",
-            pair_name: this.pair.token.pair_name,
-            pair_id: this.pair.token.pair_id,
+            pair: this.pair,
             offered: offeredAmount,
-            requested: this.pair,
-            liquidity_fee: 0,
-            liquidity_fee_mojo: 0,
-            liquidity_xch_amount: 0,
-            liquidity_xch_amount_mojo: 0,
+            requested: requestedAmount,
+            liquidity_fee: createAmountFromMojo(0, 0),
         };
     }
 }
+
 // ADDITIONS:
 //        will offer two and only two items, one of which will be xch
 //        and request only one item, which will NOT be xch
@@ -71,58 +61,38 @@ export function isRemoval(trade) {
     );
 }
 
+function createBlank(pair) {
+    return {
+        type: "consolidated",
+        pair: pair,
+        offered: createAmountFromMojo(0, 0),
+        requested: createAmountFromMojo(0, 0),
+        liquidity_fee: createAmountFromMojo(0, 0),
+    };
+}
+
 export function consolidateSwaps(swaps) {
     let grouped = _.reduce(
         swaps,
         (result, value) => {
             // this ensures we have only one object per pair
             // and creates the starter object
-            if (!result[value.pair_id]) {
-                result[value.pair_id] = {
-                    type: "consolidated",
-                    pair_name: value.pair_name,
-                    pair_id: value.pair_id,
-                    offered: {
-                        token: value.offered.token,
-                        token_amount: 0,
-                        token_amount_mojo: 0,
-                        xch_amount: 0,
-                        xch_amount_mojo: 0,
-                    },
-                    requested: {
-                        token_amount: 0,
-                        token_amount_mojo: 0,
-                    },
-                    liquidity_fee: 0,
-                    liquidity_fee_mojo: 0,
-
-                    liquidity_xch_amount: 0,
-                    liquidity_xch_amount_mojo: 0,
-                };
+            if (!result[value.pair.pair_id]) {
+                result[value.pair.pair_id] = createBlank(value.pair);
             }
 
-            // now sum up the values
-            result[value.pair_id].offered.token_amount +=
-                value.offered.token_amount;
-            result[value.pair_id].offered.token_amount_mojo +=
-                value.offered.token_amount_mojo;
-            result[value.pair_id].offered.xch_amount +=
-                value.offered.xch_amount;
-            result[value.pair_id].offered.xch_amount_mojo +=
-                value.offered.xch_amount_mojo;
-
-            result[value.pair_id].requested.token_amount +=
-                value.requested.token_amount;
-            result[value.pair_id].requested.token_amount_mojo +=
-                value.requested.token_amount_mojo;
-
-            result[value.pair_id].liquidity_fee += value.liquidity_fee;
-            result[value.pair_id].liquidity_fee_mojo +=
-                value.liquidity_fee_mojo;
-            result[value.pair_id].liquidity_xch_amount +=
-                value.liquidity_xch_amount;
-            result[value.pair_id].liquidity_xch_amount_mojo +=
-                value.liquidity_xch_amount_mojo;
+            result[value.pair.pair_id].offered = addAmounts(
+                result[value.pair.pair_id].offered,
+                value.offered
+            );
+            result[value.pair.pair_id].requested = addAmounts(
+                result[value.pair.pair_id].requested,
+                value.requested
+            );
+            result[value.pair.pair_id].liquidity_fee = addAmounts(
+                result[value.pair.pair_id].liquidity_fee,
+                value.liquidity_fee
+            );
 
             return result;
         },

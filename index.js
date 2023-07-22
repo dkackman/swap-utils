@@ -144,18 +144,18 @@ function printSwap(swap) {
                 undefined,
                 floatFormat
             )} ${
-                swap.offered.token.short_name
+                swap.pair.short_name
             } and received ${swap.requested.token_amount.toLocaleString(
                 undefined,
                 floatFormat
-            )} ${swap.pair_name}`
+            )} ${swap.pair.pair_name}`
         );
     } else if (_.get(swap, "requested.xch_amount", 0) > 0) {
         console.log(
             `Removed ${swap.offered.token_amount.toLocaleString(
                 undefined,
                 floatFormat
-            )} ${swap.pair_name} and received
+            )} ${swap.pair.pair_name} and received
             ${swap.requested.xch_amount.toLocaleString(
                 undefined,
                 floatFormat

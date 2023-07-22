@@ -1,6 +1,6 @@
 import { ChiaDaemon } from "chia-daemon";
-import { getPair, getTokenAmount } from "./token.js";
 import { consolidateSwaps, isAddition, isRemoval } from "./swap.js";
+import { getAssetId, getPairAmount } from "./pair_amount.js";
 import Swap from "./swap.js";
 import _ from "lodash";
 
@@ -34,7 +34,7 @@ export async function getLiquiditySwaps(options, fingerprints, tibetSwap) {
 
         // consolidate swaps by pair
         return consolidateSwaps(swaps).sort((a, b) =>
-            a.pair_name.localeCompare(b.pair_name)
+            a.pair.pair_name.localeCompare(b.pair.pair_name)
         );
     } finally {
         chia.disconnect();
@@ -75,21 +75,18 @@ async function getSwapsFromWallet(
             (item) => item.status === "CONFIRMED" && item.is_my_offer
         )) {
             if (isAddition(trade) && (mode === "additions" || mode === "all")) {
-                const offeredPair = getPair(tibetSwap, trade.summary.offered);
-                const swap = new Swap(offeredPair);
-                if (
-                    offeredPair.token !== undefined &&
-                    tokenFilter(offeredPair.token)
-                ) {
+                const assetId = getAssetId(trade.summary.offered);
+                const pair = tibetSwap.getPairByAssetId(assetId);
+
+                if (pair !== undefined && tokenFilter(pair)) {
                     // filter tokens that aren't on tibet-swap
                     // can't be a swap without a supported token
                     // (TODO what if i offer a token and xch for an nft?)
+                    const swap = new Swap(pair);
                     swaps.push(
                         swap.asAddition(
-                            getTokenAmount(
-                                trade.summary.requested,
-                                offeredPair.token.pair_name
-                            )
+                            getPairAmount(trade.summary.offered),
+                            getPairAmount(trade.summary.requested)
                         )
                     );
                 }
@@ -97,11 +94,10 @@ async function getSwapsFromWallet(
                 isRemoval(trade) &&
                 (mode === "removals" || mode === "all")
             ) {
-                const requestedPair = getPair(
-                    tibetSwap,
+                const requestedPair = tibetSwap.getPairByAssetId(
                     trade.summary.requested
                 );
-                const swap = new Swap(requestedPair);
+                const swap = new Swap(requestedPair.token);
 
                 if (
                     requestedPair.token !== undefined &&
@@ -109,7 +105,7 @@ async function getSwapsFromWallet(
                 ) {
                     swaps.push(
                         swap.asRemoval(
-                            getTokenAmount(
+                            tibetSwap.getTokenAmount(
                                 trade.summary.offered,
                                 requestedPair.token.pair_name
                             )

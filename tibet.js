@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { createAmountFromMojo } from "./pair_amount.js";
 
 export default class TibetSwap {
     constructor(apiUri, analyticsUri) {
@@ -7,16 +8,12 @@ export default class TibetSwap {
     }
 
     async loadTokenList() {
-        try {
-            const response = await fetch(`${this.apiUri}/tokens`);
-            this.tokens = await response.json();
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
+        const response = await fetch(`${this.apiUri}/tokens`);
+        this.tokens = await response.json();
     }
 
-    getToken(asset_id) {
-        if (asset_id === "xch") {
+    getPairByAssetId(assetId) {
+        if (assetId === "xch") {
             return {
                 asset_id: "xch",
                 name: "XCH",
@@ -24,7 +21,7 @@ export default class TibetSwap {
             };
         }
 
-        const token = _.find(this.tokens, { asset_id });
+        const token = _.find(this.tokens, { asset_id: assetId });
         if (token === undefined) {
             return undefined;
         }
