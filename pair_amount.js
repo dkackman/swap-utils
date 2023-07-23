@@ -23,13 +23,11 @@ export function getPairAmount(record) {
     return pairAmount;
 }
 
-export function getAssetId(record) {
-    for (const field in record) {
-        if (field !== "xch") {
-            return field;
-        }
-    }
-    return "xch";
+export function negate(amount) {
+    return createAmountFromMojo(
+        -amount.token_amount_mojo,
+        -amount.xch_amount_mojo
+    );
 }
 
 export function addAmounts(amount1, amount2) {

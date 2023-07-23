@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { isAddition, isRemoval } from "./swap.js";
 import { createAmountFromMojo } from "./pair_amount.js";
 
 export default class TibetSwap {
@@ -12,6 +13,19 @@ export default class TibetSwap {
         this.tokens = await response.json();
     }
 
+    getPairFromTrade(trade) {
+        if (isAddition(trade)) {
+            return this.getPairByAssetId(getAssetId(trade.summary.offered));
+        }
+
+        if (isRemoval(trade)) {
+            return this.getPairByAssetId(getAssetId(trade.summary.requested));
+        }
+
+        console.error("Could not find pair for trade", trade);
+        return undefined;
+    }
+
     getPairByAssetId(assetId) {
         if (assetId === "xch") {
             return {
@@ -23,6 +37,7 @@ export default class TibetSwap {
 
         const token = _.find(this.tokens, { asset_id: assetId });
         if (token === undefined) {
+            console.error("Could not find pair for asset", assetId);
             return undefined;
         }
 
@@ -51,8 +66,7 @@ export default class TibetSwap {
 
         return {
             pair: pair,
-            xch_amount: output_amount / 10 ** 12,
-            xch_amount_mojo: output_amount,
+            value: createAmountFromMojo(0, output_amount),
         };
     }
 
@@ -67,10 +81,16 @@ export default class TibetSwap {
 
         return {
             pair: pair,
-            token_amount: tokenOut / 1000.0,
-            token_amount_mojo: tokenOut,
-            xch_amount: xchOut / 10 ** 12,
-            xch_amount_mojo: xchOut,
+            value: createAmountFromMojo(tokenOut, xchOut),
         };
     }
+}
+
+export function getAssetId(record) {
+    for (const field in record) {
+        if (field !== "xch") {
+            return field;
+        }
+    }
+    return "xch";
 }

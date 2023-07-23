@@ -135,34 +135,38 @@ async function dumpSwaps(options, tibetSwap) {
 }
 
 function printSwap(swap) {
-    if (_.get(swap, "offered.xch_amount", 0) > 0) {
+    if (_.get(swap, "offered.xch_amount", 0) != 0) {
+        const addedXch = -swap.offered.xch_amount;
+        const addedToken = -swap.offered.token_amount;
+        const receivedToken = swap.requested.token_amount;
+
         console.log(
-            `Added ${swap.offered.xch_amount.toLocaleString(
+            `Added ${addedXch.toLocaleString(
                 undefined,
                 floatFormat
-            )} XCH and ${swap.offered.token_amount.toLocaleString(
-                undefined,
-                floatFormat
-            )} ${
+            )} XCH and ${addedToken.toLocaleString(undefined, floatFormat)} ${
                 swap.pair.short_name
-            } and received ${swap.requested.token_amount.toLocaleString(
+            } and received ${receivedToken.toLocaleString(
                 undefined,
                 floatFormat
             )} ${swap.pair.pair_name}`
         );
-    } else if (_.get(swap, "requested.xch_amount", 0) > 0) {
+    } else if (_.get(swap, "requested.xch_amount", 0) != 0) {
+        // removal values are negative
+        const removedToken = swap.offered.token_amount;
+        const receivedXch = -swap.requested.xch_amount;
+        const receivedToken = -swap.requested.token_amount;
+
         console.log(
-            `Removed ${swap.offered.token_amount.toLocaleString(
+            `Removed ${removedToken.toLocaleString(undefined, floatFormat)} ${
+                swap.pair.pair_name
+            } and received ${receivedXch.toLocaleString(
                 undefined,
                 floatFormat
-            )} ${swap.pair.pair_name} and received
-            ${swap.requested.xch_amount.toLocaleString(
+            )} XCH and ${receivedToken.toLocaleString(
                 undefined,
                 floatFormat
-            )} XCH and ${swap.requested.token_amount.toLocaleString(
-                undefined,
-                floatFormat
-            )}`
+            )} ${swap.pair.short_name}`
         );
     }
 }

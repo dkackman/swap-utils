@@ -1,9 +1,33 @@
 import _ from "lodash";
-import { createAmountFromMojo, addAmounts } from "./pair_amount.js";
+import {
+    createAmountFromMojo,
+    addAmounts,
+    getPairAmount,
+    negate,
+} from "./pair_amount.js";
 
 export default class Swap {
-    constructor(pair) {
+    constructor(pair, trade) {
         this.pair = pair;
+        this.trade = trade;
+    }
+
+    asRecord() {
+        if (isAddition(this.trade)) {
+            return this.asAddition(
+                getPairAmount(this.trade.summary.offered),
+                getPairAmount(this.trade.summary.requested)
+            );
+        }
+
+        if (isRemoval(this.trade)) {
+            return this.asRemoval(
+                getPairAmount(this.trade.summary.offered),
+                getPairAmount(this.trade.summary.requested)
+            );
+        }
+
+        return undefined;
     }
 
     asAddition(offeredAmount, requestedAmount) {
@@ -18,21 +42,18 @@ export default class Swap {
         return {
             type: "addition",
             pair: this.pair,
-            offered: offeredAmount,
+            offered: negate(offeredAmount),
             requested: requestedAmount,
             liquidity_fee: fee,
         };
     }
 
     asRemoval(offeredAmount, requestedAmount) {
-        // **
-        // if you add any fields here add them to the consolidateSwaps function
-        // **
         return {
             type: "removal",
             pair: this.pair,
             offered: offeredAmount,
-            requested: requestedAmount,
+            requested: negate(requestedAmount),
             liquidity_fee: createAmountFromMojo(0, 0),
         };
     }

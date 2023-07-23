@@ -33,8 +33,8 @@ const optionsList = [
         name: "summarize",
         alias: "s",
         type: Boolean,
-        defaultValue: true,
-        description: "False to show individual swaps.",
+        defaultValue: false,
+        description: "True summarize swaps.",
     },
     {
         name: "host",
