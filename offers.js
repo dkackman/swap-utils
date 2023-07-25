@@ -6,7 +6,7 @@ import _ from "lodash";
 export async function getLiquiditySwaps(options, fingerprints, tibetSwap) {
     const chia = new ChiaDaemon(options, "swap-utils");
     if (!(await chia.connect())) {
-        return undefined;
+        throw new Error("Could not connect to chia daemon");
     }
 
     try {
@@ -31,17 +31,21 @@ export async function getLiquiditySwaps(options, fingerprints, tibetSwap) {
             );
         }
 
-        // consolidate swaps by pair
-        if (options.summarize) {
-            swaps = consolidateSwaps(swaps);
-        }
-
         return swaps.sort((a, b) =>
             a.pair.pair_name.localeCompare(b.pair.pair_name)
         );
     } finally {
         chia.disconnect();
     }
+}
+
+export async function getLiquidityBalances(options, fingerprints, tibetSwap) {
+    options.mode = "all";
+    const swaps = await getLiquiditySwaps(options, fingerprints, tibetSwap);
+    if (swaps === undefined) {
+        return undefined;
+    }
+    return consolidateSwaps(swaps);
 }
 
 async function getSwapsFromWallet(

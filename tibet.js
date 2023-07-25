@@ -64,10 +64,7 @@ export default class TibetSwap {
         // add the sign back in to account for loss value
         output_amount *= Math.sign(amount);
 
-        return {
-            pair: pair,
-            value: createAmountFromMojo(0, output_amount),
-        };
+        return createAmountFromMojo(0, output_amount);
     }
 
     async getLiquidityValue(pairId, userLiquidity) {
@@ -79,10 +76,7 @@ export default class TibetSwap {
         const xchOut =
             userLiquidity + (userLiquidity * pair.xch_reserve) / pair.liquidity;
 
-        return {
-            pair: pair,
-            value: createAmountFromMojo(tokenOut, xchOut),
-        };
+        return createAmountFromMojo(tokenOut, xchOut);
     }
 }
 

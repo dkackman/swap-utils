@@ -1,10 +1,5 @@
 import _ from "lodash";
-import {
-    createAmountFromMojo,
-    addAmounts,
-    getPairAmount,
-    negate,
-} from "./pair_amount.js";
+import { createAmountFromMojo, getPairAmount, negate } from "./pair_amount.js";
 
 export default class Swap {
     constructor(pair, trade) {
@@ -36,15 +31,15 @@ export default class Swap {
         // the liquidity mint fee is the same as the amount of
         // the liquidity token requested (in mojo)
         const fee = createAmountFromMojo(
-            requestedAmount.token_amount_mojo,
-            offeredAmount.xch_amount_mojo - requestedAmount.token_amount_mojo
+            0,
+            requestedAmount.token_amount_mojo / 1000 // need to convert to mojo
         );
         return {
             type: "addition",
             pair: this.pair,
             offered: negate(offeredAmount),
             requested: requestedAmount,
-            liquidity_fee: fee,
+            liquidity_fee: negate(fee),
         };
     }
 
@@ -52,8 +47,8 @@ export default class Swap {
         return {
             type: "removal",
             pair: this.pair,
-            offered: offeredAmount,
-            requested: negate(requestedAmount),
+            offered: negate(offeredAmount),
+            requested: requestedAmount,
             liquidity_fee: createAmountFromMojo(0, 0),
         };
     }
@@ -86,35 +81,67 @@ function createBlank(pair) {
     return {
         type: "consolidated",
         pair: pair,
-        offered: createAmountFromMojo(0, 0),
-        requested: createAmountFromMojo(0, 0),
-        liquidity_fee: createAmountFromMojo(0, 0),
+        balances: new Map([
+            ["xch", 0.0],
+            ["liquidity_fee_xch", 0.0],
+            [pair.asset_id, 0.0],
+            [pair.pair_id, 0.0],
+        ]),
     };
 }
 
 export function consolidateSwaps(swaps) {
-    let grouped = _.reduce(
+    const grouped = _.reduce(
         swaps,
         (result, value) => {
             // this ensures we have only one object per pair
             // and creates the starter object
-            if (!result[value.pair.pair_id]) {
-                result[value.pair.pair_id] = createBlank(value.pair);
+            const resultRecord =
+                result[value.pair.pair_id] ?? createBlank(value.pair);
+
+            resultRecord.balances.set(
+                "xch",
+                resultRecord.balances.get("xch") +
+                    value.offered.xch_amount +
+                    value.requested.xch_amount
+            );
+            resultRecord.balances.set(
+                "liquidity_fee_xch",
+                resultRecord.balances.get("liquidity_fee_xch") +
+                    value.liquidity_fee.xch_amount
+            );
+
+            // look closely at this next bit before changing
+            // when adding liquidity the offer has the CAT
+            // and the requested is the liquidity token (TIBET-???-TOKEN)
+            // On removing liquidity the offer and request are reversed
+            if (value.type === "addition") {
+                resultRecord.balances.set(
+                    value.pair.asset_id,
+                    resultRecord.balances.get(value.pair.asset_id) +
+                        value.offered.token_amount
+                );
+                resultRecord.balances.set(
+                    value.pair.pair_id,
+                    resultRecord.balances.get(value.pair.pair_id) +
+                        value.requested.token_amount
+                );
+            } else if (value.type === "removal") {
+                resultRecord.balances.set(
+                    value.pair.asset_id,
+                    resultRecord.balances.get(value.pair.asset_id) +
+                        value.requested.token_amount
+                );
+                resultRecord.balances.set(
+                    value.pair.pair_id,
+                    resultRecord.balances.get(value.pair.pair_id) +
+                        value.offered.token_amount
+                );
+            } else {
+                throw new Error(`Unknown swap type: ${value.type}`);
             }
 
-            result[value.pair.pair_id].offered = addAmounts(
-                result[value.pair.pair_id].offered,
-                value.offered
-            );
-            result[value.pair.pair_id].requested = addAmounts(
-                result[value.pair.pair_id].requested,
-                value.requested
-            );
-            result[value.pair.pair_id].liquidity_fee = addAmounts(
-                result[value.pair.pair_id].liquidity_fee,
-                value.liquidity_fee
-            );
-
+            result[value.pair.pair_id] = resultRecord;
             return result;
         },
         {}
