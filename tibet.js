@@ -1,4 +1,6 @@
 import _ from "lodash";
+import { isAddition, isRemoval } from "./swap.js";
+import { createAmountFromMojo } from "./pair_amount.js";
 
 export default class TibetSwap {
     constructor(apiUri, analyticsUri) {
@@ -7,16 +9,25 @@ export default class TibetSwap {
     }
 
     async loadTokenList() {
-        try {
-            const response = await fetch(`${this.apiUri}/tokens`);
-            this.tokens = await response.json();
-        } catch (error) {
-            console.error("Error fetching data:", error);
-        }
+        const response = await fetch(`${this.apiUri}/tokens`);
+        this.tokens = await response.json();
     }
 
-    getToken(asset_id) {
-        if (asset_id === "xch") {
+    getPairFromTrade(trade) {
+        if (isAddition(trade)) {
+            return this.getPairByAssetId(getAssetId(trade.summary.offered));
+        }
+
+        if (isRemoval(trade)) {
+            return this.getPairByAssetId(getAssetId(trade.summary.requested));
+        }
+
+        console.error("Could not find pair for trade", trade);
+        return undefined;
+    }
+
+    getPairByAssetId(assetId) {
+        if (assetId === "xch") {
             return {
                 asset_id: "xch",
                 name: "XCH",
@@ -24,8 +35,9 @@ export default class TibetSwap {
             };
         }
 
-        const token = _.find(this.tokens, { asset_id });
+        const token = _.find(this.tokens, { asset_id: assetId });
         if (token === undefined) {
+            console.error("Could not find pair for asset", assetId);
             return undefined;
         }
 
@@ -52,11 +64,7 @@ export default class TibetSwap {
         // add the sign back in to account for loss value
         output_amount *= Math.sign(amount);
 
-        return {
-            pair: pair,
-            xch_amount: output_amount / 10 ** 12,
-            xch_amount_mojo: output_amount,
-        };
+        return createAmountFromMojo(0, output_amount);
     }
 
     async getLiquidityValue(pairId, userLiquidity) {
@@ -68,12 +76,15 @@ export default class TibetSwap {
         const xchOut =
             userLiquidity + (userLiquidity * pair.xch_reserve) / pair.liquidity;
 
-        return {
-            pair: pair,
-            token_amount: tokenOut / 1000.0,
-            token_amount_mojo: tokenOut,
-            xch_amount: xchOut / 10 ** 12,
-            xch_amount_mojo: xchOut,
-        };
+        return createAmountFromMojo(tokenOut, xchOut);
     }
+}
+
+export function getAssetId(record) {
+    for (const field in record) {
+        if (field !== "xch") {
+            return field;
+        }
+    }
+    return "xch";
 }

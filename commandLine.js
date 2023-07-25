@@ -8,9 +8,10 @@ const commandList = [
         defaultOption: true,
         defaultValue: "imp",
         description:
-            "The command to run:\nswaps\tList summarized swaps.\nimp\tShow impermanent loss.",
+            "The command to run:\nswaps\tList swaps.\nimp\tShow impermanent loss.\nxch\tShow the estimated value of current liquidity.",
     },
 ];
+
 const optionsList = [
     {
         name: "token",
@@ -19,6 +20,21 @@ const optionsList = [
         defaultValue: undefined,
         typeLabel: "(token symbol)",
         description: "Limit the output to this token.",
+    },
+    {
+        name: "mode",
+        alias: "m",
+        type: String,
+        defaultValue: "all",
+        typeLabel: "(additions, removals, {underline all})",
+        description: "The type of swap to include.",
+    },
+    {
+        name: "summarize",
+        alias: "s",
+        type: Boolean,
+        defaultValue: false,
+        description: "True summarize swaps.",
     },
     {
         name: "host",
