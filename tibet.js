@@ -65,6 +65,10 @@ export default class TibetSwap {
     }
 
     async estimatePairValue(pairId, amount) {
+        if (amount === 0) {
+            return 0;
+        }
+
         const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
         const pair = await pairResponse.json();
 
@@ -73,15 +77,11 @@ export default class TibetSwap {
 
         // amount should be passed in token units - convert to mojo
         const input_amount = amount * 1000;
-        if (input_amount === 0) {
-            return 0;
-        }
-
         if (input_amount > output_reserve) {
             return 0;
         }
 
-        if (amount > 0) {
+        if (input_amount > 0) {
             const output_amount =
                 (993 * input_amount * output_reserve) /
                 (993 * input_amount + 1000 * input_reserve);
