@@ -91,6 +91,7 @@ export default class TibetSwap {
 
         const numerator = input_reserve * input_amount;
         const denominator = (output_reserve - input_amount) * 993;
+
         return createAmountFromMojo(0, Math.floor(numerator / denominator) + 1);
     }
 

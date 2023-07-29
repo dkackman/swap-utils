@@ -149,7 +149,7 @@ async function impermanence(options, tibetSwap) {
             } else {
                 console.log(
                     `${
-                        record.pair.pair_name
+                        record.pair.short_name
                     }: ${record.netXchReturns.toLocaleString(
                         undefined,
                         floatFormat
@@ -208,7 +208,7 @@ function printSwap(swap) {
 
         console.log(
             `Removed ${removedToken.toLocaleString(undefined, floatFormat)} ${
-                swap.pair.pair_name
+                swap.pair.short_name
             } liquidity and received ${receivedXch.toLocaleString(
                 undefined,
                 floatFormat
