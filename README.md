@@ -26,12 +26,14 @@ chia swap-utils
 Commands
 
   --command string   The command to run:
-                     swaps List swaps.
-                     imp Show impermanent loss.
+                     swaps  Show liquidity swaps.
+                     imp    Show impermanent loss.
+                     xch    Show the estimated XCH value of current liquidity.
 
 Options (defaults to Tibet production and localhost chia)
 
-  -n, --token token symbol               Limit the output to this token.
+  -n, --token (token symbol)             Limit the output to this token.
+  -v, --verbose                          Show verbose details.
   -d, --host string                      The chia daemon host. (localhost)
   -p, --port number                      The chia daemon port. (55400)
   -k, --key_path string                  The path to the daemon private key.
@@ -58,7 +60,7 @@ Swapped 0.000612042913 XCH and 0.42 POTT for 0.355 TIBET-POTT-XCH
 Swapped 0.429211636061 XCH and 1.061 CH21 for 1.061 TIBET-CH21-XCH
 
 # shows impermanent loss for swaps across two wallets
-$ npx . imp --wallet_fingerprints 1234567890 0987654321
+$ npx . imp --wallet_fingerprints 1234567890 0987654321 --verbose
 
 Swapped 0.000612042913 XCH and 0.42 POTT for 0.355 TIBET-POTT-XCH
 Now worth 0.000507019827 XCH and 0.518555709146 POTT
@@ -69,3 +71,8 @@ Now worth 0.44743417566 XCH and 1.043509175739 CH21
 Net 0.018222539599 XCH and -0.017490824261 CH21
 --------------------------------------------------
 Total net 0.018117516513 XCH
+
+# shows the estimated XCH value of current liquidity
+$ npx . xch --token ALGOLD
+ALGOLD: 0.00006835841 XCH
+Total: 0.00006835841 XCH

@@ -36,6 +36,14 @@ async function xch(options, tibetSwap) {
     let total = 0.0;
     for (const balance of balances) {
         total += balance.total_xch_value;
+        printXchBalance(options, balance);
+    }
+
+    console.log(`Total: ${total.toLocaleString(undefined, floatFormat)} XCH`);
+}
+
+function printXchBalance(options, balance) {
+    if (options.verbose) {
         console.log(
             `${
                 balance.pair.short_name
@@ -52,9 +60,16 @@ async function xch(options, tibetSwap) {
                 floatFormat
             )} XCH`
         );
+    } else {
+        console.log(
+            `${
+                balance.pair.short_name
+            }: ${balance.total_xch_value.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH`
+        );
     }
-
-    console.log(`Total: ${total.toLocaleString(undefined, floatFormat)} XCH`);
 }
 
 async function impermanence(options, tibetSwap) {
@@ -97,39 +112,50 @@ async function impermanence(options, tibetSwap) {
         console.log(JSON.stringify(balances));
     } else {
         for (const record of balances) {
-            printBalance(record);
-
-            console.log(
-                `Now worth ${record.currentValue.xch_amount.toLocaleString(
-                    undefined,
-                    floatFormat
-                )} XCH and ${record.currentValue.token_amount.toLocaleString(
-                    undefined,
-                    floatFormat
-                )} ${record.pair.short_name}`
-            );
-            console.log(
-                `Net change ${record.netXchAmount.toLocaleString(
-                    undefined,
-                    floatFormat
-                )} XCH and ${record.netTokenAmount.toLocaleString(
-                    undefined,
-                    floatFormat
-                )} ${
-                    record.pair.short_name
-                } (worth ${record.pairValue.xch_amount.toLocaleString(
-                    undefined,
-                    floatFormat
-                )} XCH)`
-            );
-
-            console.log(
-                `Impermanence ${record.netXchReturns.toLocaleString(
-                    undefined,
-                    floatFormat
-                )} XCH`
-            );
-            console.log("--------------------------------------------------");
+            if (options.verbose) {
+                printBalance(record);
+                console.log(
+                    `Now worth ${record.currentValue.xch_amount.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} XCH and ${record.currentValue.token_amount.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} ${record.pair.short_name}`
+                );
+                console.log(
+                    `Net change ${record.netXchAmount.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} XCH and ${record.netTokenAmount.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} ${
+                        record.pair.short_name
+                    } (worth ${record.pairValue.xch_amount.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} XCH)`
+                );
+                console.log(
+                    `Impermanence ${record.netXchReturns.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} XCH`
+                );
+                console.log(
+                    "--------------------------------------------------"
+                );
+            } else {
+                console.log(
+                    `${
+                        record.pair.pair_name
+                    }: ${record.netXchReturns.toLocaleString(
+                        undefined,
+                        floatFormat
+                    )} XCH impermanence`
+                );
+            }
         }
         console.log(
             `Total impermanence ${totalXchReturns.toLocaleString(
