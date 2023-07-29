@@ -26,7 +26,7 @@ chia swap-utils
 Commands
 
   --command string   The command to run:
-                     swaps List summarized swaps.
+                     swaps List swaps.
                      imp Show impermanent loss.
 
 Options (defaults to Tibet production and localhost chia)

@@ -16,7 +16,7 @@ export async function getWalletBalances(options, tibetSwap) {
                 ? () => true
                 : (pair) => {
                       return (
-                          pair.pair_name.toUpperCase() ===
+                          pair.short_name.toUpperCase() ===
                           options.token.toUpperCase()
                       );
                   };
@@ -78,11 +78,11 @@ async function getBalance(chia, wallet, tibetSwap) {
     });
     const liquidityValue = await tibetSwap.getLiquidityValue(
         wallet.pair.pair_id,
-        balance.wallet_balance.confirmed_wallet_balance / 1000 // convert from tokens to mojo
+        balance.wallet_balance.confirmed_wallet_balance // convert from tokens to mojo
     );
     const pairValue = await tibetSwap.estimatePairValue(
         wallet.pair.pair_id,
-        liquidityValue.token_amount_mojo
+        liquidityValue.token_amount
     );
     return {
         wallet: wallet,

@@ -64,7 +64,7 @@ export default class TibetSwap {
         };
     }
 
-    async estimatePairValue(pairId, amountMojo) {
+    async estimatePairValue(pairId, amount) {
         const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
         const pair = await pairResponse.json();
 
@@ -73,13 +73,13 @@ export default class TibetSwap {
 
         // input_amount should be passed in token units - convert to mojo
         // also take absolute value of amount in case it's negative
-        const input_amount = Math.abs(amountMojo) * 1000;
+        const input_amount = Math.abs(amount) * 1000;
         let output_amount =
             (993 * input_amount * output_reserve) /
             (993 * input_amount + 1000 * input_reserve);
 
         // add the sign back in to account for loss value
-        output_amount *= Math.sign(amountMojo);
+        output_amount *= Math.sign(amount);
 
         return createAmountFromMojo(0, output_amount);
     }

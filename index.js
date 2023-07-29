@@ -38,8 +38,16 @@ async function xch(options, tibetSwap) {
         total += balance.total_xch_value;
         console.log(
             `${
-                balance.pair.pair_name
-            }: ${balance.total_xch_value.toLocaleString(
+                balance.pair.short_name
+            }: ${balance.liquidity_xch_value.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH liquidity and ${balance.token_xch_value.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH worth of ${
+                balance.pair.name
+            }, totaling ${balance.total_xch_value.toLocaleString(
                 undefined,
                 floatFormat
             )} XCH`
@@ -143,11 +151,11 @@ async function swaps(options, tibetSwap) {
 }
 
 async function getRecords(options, tibetSwap) {
-    if (options.summarize) {
-        return await getLiquidityBalances(options, tibetSwap);
+    if (options.verbose) {
+        return await getLiquiditySwaps(options, tibetSwap);
     }
 
-    return await getLiquiditySwaps(options, tibetSwap);
+    return await getLiquidityBalances(options, tibetSwap);
 }
 
 function printSwap(swap) {

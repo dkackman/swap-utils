@@ -25,8 +25,7 @@ export async function getLiquiditySwaps(options, tibetSwap) {
                     chia,
                     fingerprint,
                     tibetSwap,
-                    tokenFilter,
-                    options.mode
+                    tokenFilter
                 )
             );
         }
@@ -40,7 +39,6 @@ export async function getLiquiditySwaps(options, tibetSwap) {
 }
 
 export async function getLiquidityBalances(options, fingerprints, tibetSwap) {
-    options.mode = "all";
     const swaps = await getLiquiditySwaps(options, fingerprints, tibetSwap);
     if (swaps === undefined) {
         return undefined;
@@ -48,13 +46,7 @@ export async function getLiquidityBalances(options, fingerprints, tibetSwap) {
     return consolidateSwaps(swaps);
 }
 
-async function getSwapsFromWallet(
-    chia,
-    fingerprint,
-    tibetSwap,
-    tokenFilter,
-    mode
-) {
+async function getSwapsFromWallet(chia, fingerprint, tibetSwap, tokenFilter) {
     // null signals just do the default wallet
     // otherwise we need to login to the wallet
     if (fingerprint !== null) {
@@ -83,11 +75,7 @@ async function getSwapsFromWallet(
                 item.status === "CONFIRMED" &&
                 item.is_my_offer &&
                 // this next part should filter out all the trades that are not swaps
-                // and apply the mode setting
-                ((isAddition(item) &&
-                    (mode === "additions" || mode === "all")) ||
-                    (isRemoval(item) &&
-                        (mode === "removals" || mode === "all")))
+                (isAddition(item) || isRemoval(item))
         )) {
             const pair = tibetSwap.getPairFromTrade(trade);
             if (tokenFilter(pair)) {
