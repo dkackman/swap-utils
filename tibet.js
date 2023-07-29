@@ -71,17 +71,38 @@ export default class TibetSwap {
         const output_reserve = pair.xch_reserve;
         const input_reserve = pair.token_reserve;
 
-        // input_amount should be passed in token units - convert to mojo
-        // also take absolute value of amount in case it's negative
-        const input_amount = Math.abs(amount) * 1000;
-        let output_amount =
-            (993 * input_amount * output_reserve) /
-            (993 * input_amount + 1000 * input_reserve);
+        // amount should be passed in token units - convert to mojo
+        const input_amount = amount * 1000;
+        if (input_amount === 0) {
+            return 0;
+        }
 
-        // add the sign back in to account for loss value
-        output_amount *= Math.sign(amount);
+        if (input_amount > output_reserve) {
+            return 0;
+        }
 
-        return createAmountFromMojo(0, output_amount);
+        if (amount > 0) {
+            const output_amount =
+                (993 * input_amount * output_reserve) /
+                (993 * input_amount + 1000 * input_reserve);
+
+            return createAmountFromMojo(0, output_amount);
+        }
+
+        const numerator = input_reserve * input_amount;
+        const denominator = (output_reserve - input_amount) * 993;
+        return createAmountFromMojo(0, Math.floor(numerator / denominator) + 1);
+    }
+
+    getOutputPrice(output_amount, input_reserve, output_reserve) {
+        if (output_amount > output_reserve) {
+            return 0;
+        }
+        if (output_amount == 0) return 0;
+
+        const numerator = input_reserve * output_amount * 1000;
+        const denominator = (output_reserve - output_amount) * 993;
+        return Math.floor(numerator / denominator) + 1;
     }
 
     async getLiquidityValue(pairId, userLiquidity) {
