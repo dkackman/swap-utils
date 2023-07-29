@@ -30,6 +30,7 @@
         "chia-daemon": "^0.10.1",
         "command-line-args": "^5.2.1",
         "command-line-usage": "^7.0.1",
+        "debug": "^4.3.4",
         "lodash": "^4.17.21"
     },
     "devDependencies": {

@@ -1,6 +1,8 @@
 import _ from "lodash";
 import { isAddition, isRemoval } from "./swap.js";
 import { createAmountFromMojo } from "./pair_amount.js";
+import _debug from "debug";
+const debug = _debug("tibet");
 
 export default class TibetSwap {
     constructor(apiUri, analyticsUri) {
@@ -9,8 +11,11 @@ export default class TibetSwap {
     }
 
     async loadTokenList() {
-        const response = await fetch(`${this.apiUri}/tokens`);
-        this.tokens = await response.json();
+        const tokensResponse = await fetch(`${this.apiUri}/tokens`);
+        this.tokens = await tokensResponse.json();
+
+        const pairsResponse = await fetch(`${this.apiUri}/pairs?limit=500`);
+        this.pairs = await pairsResponse.json();
     }
 
     getPairFromTrade(trade) {
@@ -26,6 +31,18 @@ export default class TibetSwap {
         return undefined;
     }
 
+    getPairByLiquidityTokenId(liquidityTokenId) {
+        const pair = _.find(this.pairs, {
+            liquidity_asset_id: liquidityTokenId,
+        });
+        if (pair === undefined) {
+            debug("Could not find pair for liquidity token", liquidityTokenId);
+            return undefined;
+        }
+
+        return this.getPairByAssetId(pair.asset_id);
+    }
+
     getPairByAssetId(assetId) {
         if (assetId === "xch") {
             return {
@@ -37,7 +54,7 @@ export default class TibetSwap {
 
         const token = _.find(this.tokens, { asset_id: assetId });
         if (token === undefined) {
-            console.error("Could not find pair for asset", assetId);
+            debug("Could not find pair for asset", assetId);
             return undefined;
         }
 
@@ -47,7 +64,7 @@ export default class TibetSwap {
         };
     }
 
-    async estimatePairValue(pairId, amount) {
+    async estimatePairValue(pairId, amountMojo) {
         const pairResponse = await fetch(`${this.analyticsUri}/pair/${pairId}`);
         const pair = await pairResponse.json();
 
@@ -56,13 +73,13 @@ export default class TibetSwap {
 
         // input_amount should be passed in token units - convert to mojo
         // also take absolute value of amount in case it's negative
-        const input_amount = Math.abs(amount) * 1000;
+        const input_amount = Math.abs(amountMojo) * 1000;
         let output_amount =
             (993 * input_amount * output_reserve) /
             (993 * input_amount + 1000 * input_reserve);
 
         // add the sign back in to account for loss value
-        output_amount *= Math.sign(amount);
+        output_amount *= Math.sign(amountMojo);
 
         return createAmountFromMojo(0, output_amount);
     }

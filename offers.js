@@ -3,7 +3,7 @@ import { consolidateSwaps, isAddition, isRemoval } from "./swap.js";
 import Swap from "./swap.js";
 import _ from "lodash";
 
-export async function getLiquiditySwaps(options, fingerprints, tibetSwap) {
+export async function getLiquiditySwaps(options, tibetSwap) {
     const chia = new ChiaDaemon(options, "swap-utils");
     if (!(await chia.connect())) {
         throw new Error("Could not connect to chia daemon");
@@ -19,7 +19,7 @@ export async function getLiquiditySwaps(options, fingerprints, tibetSwap) {
                       options.token.toUpperCase();
 
         // get all swap offers from all specified wallets
-        for await (const fingerprint of fingerprints || [null]) {
+        for await (const fingerprint of options.wallet_fingerprints || [null]) {
             swaps = swaps.concat(
                 await getSwapsFromWallet(
                     chia,

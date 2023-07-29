@@ -2,6 +2,7 @@
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
 import { options, showHelp } from "./commandLine.js";
+import { getWalletBalances } from "./wallets.js";
 import _ from "lodash";
 
 const floatFormat = {
@@ -30,50 +31,64 @@ if (options.help) {
     }
 }
 
-async function impermanence(options, tibetSwap) {
-    const balances = await getLiquidityBalances(
-        options,
-        options.wallet_fingerprints,
-        tibetSwap
-    );
-
-    // for each summarized swap get the pair
-    for await (const balance of balances) {
-        balance.currentValue = await tibetSwap.getLiquidityValue(
-            balance.pair.pair_id,
-            balance.balances.get(balance.pair.pair_id) * 1000
+async function xch(options, tibetSwap) {
+    const balances = await getWalletBalances(options, tibetSwap);
+    let total = 0.0;
+    for (const balance of balances) {
+        total += balance.total_xch_value;
+        console.log(
+            `${
+                balance.pair.pair_name
+            }: ${balance.total_xch_value.toLocaleString(
+                undefined,
+                floatFormat
+            )} XCH`
         );
+    }
+
+    console.log(`Total: ${total.toLocaleString(undefined, floatFormat)} XCH`);
+}
+
+async function impermanence(options, tibetSwap) {
+    const balances = await getLiquidityBalances(options, tibetSwap);
+
+    let totalXchReturns = 0.0;
+
+    for await (const record of balances) {
+        // the current value of the liquidity held in this pair
+        record.currentValue = await tibetSwap.getLiquidityValue(
+            record.pair.pair_id,
+            record.balances.get(record.pair.pair_id) * 1000
+        );
+        // the change in xch amount
+        record.netXchAmount =
+            record.currentValue.xch_amount + record.balances.get("xch");
+
+        // the change in token amount
+        record.netTokenAmount =
+            record.currentValue.token_amount +
+            record.balances.get(record.pair.asset_id);
+
+        // the current market value of the net amount of token
+        record.pairValue = await tibetSwap.estimatePairValue(
+            record.pair.pair_id,
+            record.netTokenAmount
+        );
+
+        // the total investment returns for this pair is equal to the
+        // net change of xch + the current market value (in xch) of the net token amount.
+        // Also, since the liquidity fee is burned on withdrawal, factor it out
+        record.netXchReturns =
+            record.netXchAmount +
+            record.pairValue.xch_amount -
+            record.balances.get("liquidity_fee_xch");
+        totalXchReturns += record.netXchReturns;
     }
 
     if (options.json) {
         console.log(JSON.stringify(balances));
     } else {
-        let totalXchReturns = 0.0;
-
-        for await (const record of balances) {
-            // the change in xch amount
-            const netXchAmount =
-                record.currentValue.xch_amount + record.balances.get("xch");
-            // the change in token amount
-            const netTokenAmount =
-                record.currentValue.token_amount +
-                record.balances.get(record.pair.asset_id);
-
-            // the current market value of the net amount of token
-            const pairValue = await tibetSwap.estimatePairValue(
-                record.pair.pair_id,
-                netTokenAmount
-            );
-
-            // the total investment returns for this pair is equal to the
-            // net change of xch + the current market value (in xch) of the net token amount.
-            // Also, since the liquidity fee is burned on withdrawal, factor it out
-            const netXchReturns =
-                netXchAmount +
-                pairValue.xch_amount -
-                record.balances.get("liquidity_fee_xch");
-            totalXchReturns += netXchReturns;
-
+        for (const record of balances) {
             printBalance(record);
 
             console.log(
@@ -86,22 +101,22 @@ async function impermanence(options, tibetSwap) {
                 )} ${record.pair.short_name}`
             );
             console.log(
-                `Net change ${netXchAmount.toLocaleString(
+                `Net change ${record.netXchAmount.toLocaleString(
                     undefined,
                     floatFormat
-                )} XCH and ${netTokenAmount.toLocaleString(
+                )} XCH and ${record.netTokenAmount.toLocaleString(
                     undefined,
                     floatFormat
                 )} ${
                     record.pair.short_name
-                } (worth ${pairValue.xch_amount.toLocaleString(
+                } (worth ${record.pairValue.xch_amount.toLocaleString(
                     undefined,
                     floatFormat
                 )} XCH)`
             );
 
             console.log(
-                `Impermanence ${netXchReturns.toLocaleString(
+                `Impermanence ${record.netXchReturns.toLocaleString(
                     undefined,
                     floatFormat
                 )} XCH`
@@ -129,18 +144,10 @@ async function swaps(options, tibetSwap) {
 
 async function getRecords(options, tibetSwap) {
     if (options.summarize) {
-        return await getLiquidityBalances(
-            options,
-            options.wallet_fingerprints,
-            tibetSwap
-        );
+        return await getLiquidityBalances(options, tibetSwap);
     }
 
-    return await getLiquiditySwaps(
-        options,
-        options.wallet_fingerprints,
-        tibetSwap
-    );
+    return await getLiquiditySwaps(options, tibetSwap);
 }
 
 function printSwap(swap) {
