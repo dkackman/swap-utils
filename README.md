@@ -1,6 +1,6 @@
 # swap-utils
 
-A small utility to show swap details, current xch value, and estimated impermanent loss for liqudity swaps on the [tibet swap liquidity provider](https://v2.tibetswap.io/).
+A small utility to show swap details, current xch value, and estimated impermanent loss for liquidity swaps on the [tibet swap liquidity provider](https://v2.tibetswap.io/).
 
 ### Thanks [yakuhito.xch](https://twitter.com/yakuh1t0)
 
