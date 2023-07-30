@@ -8,7 +8,7 @@ const commandList = [
         defaultOption: true,
         defaultValue: "imp",
         description:
-            "The command to run:\nswaps\tShow liquidity swaps.\nimp\tShow impermanent loss.\nxch\tShow the estimated XCH value of current liquidity.",
+            "The command to run:\nswaps\tShow liquidity swaps.\nimp\tShow estimated impermanent loss.\nxch\tShow the estimated XCH value of current liquidity.",
     },
 ];
 
