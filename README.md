@@ -1,6 +1,6 @@
 # swap-utils
 
-A small utility to show swap details, current xch value, and estimated impermanent loss for liquidity swaps on the [tibet swap liquidity provider](https://v2.tibetswap.io/).
+A small utility to show swap details, estimated xch value, and estimated impermanent loss for liquidity swaps on the [tibet swap liquidity provider](https://v2.tibetswap.io/).
 
 ### Thanks [yakuhito.xch](https://twitter.com/yakuh1t0)
 
@@ -27,7 +27,7 @@ Commands
 
   --command string   The command to run:
                      swaps  Show liquidity swaps.
-                     imp    Show impermanent loss.
+                     imp    Show estimated impermanent loss.
                      xch    Show the estimated XCH value of current liquidity.
 
 Options (defaults to Tibet production and localhost chia)
