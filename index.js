@@ -15,7 +15,7 @@ if (options.help) {
 } else {
     const tibetSwap = new TibetSwap(
         options.tibet_api_uri,
-        options.tibet_analytics_api_uri
+        options.tibet_analytics_api_uri,
     );
     await tibetSwap.loadTokenList();
 
@@ -49,16 +49,16 @@ function printXchBalance(options, balance) {
                 balance.pair.short_name
             }: ${balance.liquidity_xch_value.toLocaleString(
                 undefined,
-                floatFormat
+                floatFormat,
             )} XCH liquidity and ${balance.token_xch_value.toLocaleString(
                 undefined,
-                floatFormat
+                floatFormat,
             )} XCH worth of ${
                 balance.pair.name
             }, totaling ${balance.total_xch_value.toLocaleString(
                 undefined,
-                floatFormat
-            )} XCH`
+                floatFormat,
+            )} XCH`,
         );
     } else {
         console.log(
@@ -66,8 +66,8 @@ function printXchBalance(options, balance) {
                 balance.pair.short_name
             }: ${balance.total_xch_value.toLocaleString(
                 undefined,
-                floatFormat
-            )} XCH`
+                floatFormat,
+            )} XCH`,
         );
     }
 }
@@ -81,7 +81,7 @@ async function impermanence(options, tibetSwap) {
         // the current value of the liquidity held in this pair
         record.currentValue = await tibetSwap.getLiquidityValue(
             record.pair.pair_id,
-            record.balances.get(record.pair.pair_id) * 1000
+            record.balances.get(record.pair.pair_id) * 1000,
         );
         // the change in xch amount
         record.netXchAmount =
@@ -95,7 +95,7 @@ async function impermanence(options, tibetSwap) {
         // the current market value of the net amount of token
         record.pairValue = await tibetSwap.estimatePairValue(
             record.pair.pair_id,
-            record.netTokenAmount
+            record.netTokenAmount,
         );
 
         // the total investment returns for this pair is equal to the
@@ -117,34 +117,34 @@ async function impermanence(options, tibetSwap) {
                 console.log(
                     `Now worth ${record.currentValue.xch_amount.toLocaleString(
                         undefined,
-                        floatFormat
+                        floatFormat,
                     )} XCH and ${record.currentValue.token_amount.toLocaleString(
                         undefined,
-                        floatFormat
-                    )} ${record.pair.short_name}`
+                        floatFormat,
+                    )} ${record.pair.short_name}`,
                 );
                 console.log(
                     `Net change ${record.netXchAmount.toLocaleString(
                         undefined,
-                        floatFormat
+                        floatFormat,
                     )} XCH and ${record.netTokenAmount.toLocaleString(
                         undefined,
-                        floatFormat
+                        floatFormat,
                     )} ${
                         record.pair.short_name
                     } (worth ${record.pairValue.xch_amount.toLocaleString(
                         undefined,
-                        floatFormat
-                    )} XCH)`
+                        floatFormat,
+                    )} XCH)`,
                 );
                 console.log(
                     `Impermanence ${record.netXchReturns.toLocaleString(
                         undefined,
-                        floatFormat
-                    )} XCH`
+                        floatFormat,
+                    )} XCH`,
                 );
                 console.log(
-                    "--------------------------------------------------"
+                    "--------------------------------------------------",
                 );
             } else {
                 console.log(
@@ -152,16 +152,16 @@ async function impermanence(options, tibetSwap) {
                         record.pair.short_name
                     }: ${record.netXchReturns.toLocaleString(
                         undefined,
-                        floatFormat
-                    )} XCH impermanence`
+                        floatFormat,
+                    )} XCH impermanence`,
                 );
             }
         }
         console.log(
             `Total impermanence ${totalXchReturns.toLocaleString(
                 undefined,
-                floatFormat
-            )} XCH`
+                floatFormat,
+            )} XCH`,
         );
     }
 }
@@ -193,13 +193,13 @@ function printSwap(swap) {
         console.log(
             `Added ${addedXch.toLocaleString(
                 undefined,
-                floatFormat
+                floatFormat,
             )} XCH and ${addedToken.toLocaleString(undefined, floatFormat)} ${
                 swap.pair.short_name
             } liquidity and received ${receivedToken.toLocaleString(
                 undefined,
-                floatFormat
-            )} ${swap.pair.pair_name}`
+                floatFormat,
+            )} ${swap.pair.pair_name}`,
         );
     } else if (swap.type === "removal") {
         const removedToken = Math.abs(swap.offered.token_amount);
@@ -211,11 +211,11 @@ function printSwap(swap) {
                 swap.pair.short_name
             } liquidity and received ${receivedXch.toLocaleString(
                 undefined,
-                floatFormat
+                floatFormat,
             )} XCH and ${receivedToken.toLocaleString(
                 undefined,
-                floatFormat
-            )} ${swap.pair.short_name}`
+                floatFormat,
+            )} ${swap.pair.short_name}`,
         );
     } else if (swap.type === "consolidated") {
         printBalance(swap);
@@ -228,14 +228,13 @@ function printBalance(balance) {
     const swapTokenBalance = balance.balances.get(balance.pair.pair_id);
 
     console.log(
-        `Balance of ${swapTokenBalance.toLocaleString(
+        `Balance of ${xchBalance.toLocaleString(
             undefined,
-            floatFormat
-        )} ${balance.pair.pair_name}, ${xchBalance.toLocaleString(
-            undefined,
-            floatFormat
-        )} XCH, and ${tokenBalance.toLocaleString(undefined, floatFormat)} ${
+            floatFormat,
+        )} XCH, ${tokenBalance.toLocaleString(undefined, floatFormat)} ${
             balance.pair.short_name
-        }.`
+        }, and ${swapTokenBalance.toLocaleString(undefined, floatFormat)} ${
+            balance.pair.pair_name
+        }`,
     );
 }
