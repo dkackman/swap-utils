@@ -5,9 +5,13 @@ import { options, showHelp } from "./commandLine.js";
 import { getWalletBalances } from "./wallets.js";
 import _ from "lodash";
 
-const floatFormat = {
+const xchFloatFormat = {
     minimumFractionDigits: 0,
     maximumFractionDigits: 12,
+};
+const catFloatFormat = {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
 };
 
 if (options.help) {
@@ -39,7 +43,9 @@ async function xch(options, tibetSwap) {
         printXchBalance(options, balance);
     }
 
-    console.log(`Total: ${total.toLocaleString(undefined, floatFormat)} XCH`);
+    console.log(
+        `Total: ${total.toLocaleString(undefined, xchFloatFormat)} XCH`,
+    );
 }
 
 function printXchBalance(options, balance) {
@@ -49,15 +55,15 @@ function printXchBalance(options, balance) {
                 balance.pair.short_name
             }: ${balance.liquidity_xch_value.toLocaleString(
                 undefined,
-                floatFormat,
+                xchFloatFormat,
             )} XCH liquidity and ${balance.token_xch_value.toLocaleString(
                 undefined,
-                floatFormat,
+                xchFloatFormat,
             )} XCH worth of ${
                 balance.pair.name
             }, totaling ${balance.total_xch_value.toLocaleString(
                 undefined,
-                floatFormat,
+                xchFloatFormat,
             )} XCH`,
         );
     } else {
@@ -66,7 +72,7 @@ function printXchBalance(options, balance) {
                 balance.pair.short_name
             }: ${balance.total_xch_value.toLocaleString(
                 undefined,
-                floatFormat,
+                xchFloatFormat,
             )} XCH`,
         );
     }
@@ -117,30 +123,30 @@ async function impermanence(options, tibetSwap) {
                 console.log(
                     `Now worth ${record.currentValue.xch_amount.toLocaleString(
                         undefined,
-                        floatFormat,
+                        xchFloatFormat,
                     )} XCH and ${record.currentValue.token_amount.toLocaleString(
                         undefined,
-                        floatFormat,
+                        catFloatFormat,
                     )} ${record.pair.short_name}`,
                 );
                 console.log(
                     `Net change ${record.netXchAmount.toLocaleString(
                         undefined,
-                        floatFormat,
+                        xchFloatFormat,
                     )} XCH and ${record.netTokenAmount.toLocaleString(
                         undefined,
-                        floatFormat,
+                        catFloatFormat,
                     )} ${
                         record.pair.short_name
                     } (worth ${record.pairValue.xch_amount.toLocaleString(
                         undefined,
-                        floatFormat,
+                        xchFloatFormat,
                     )} XCH)`,
                 );
                 console.log(
                     `Impermanence ${record.netXchReturns.toLocaleString(
                         undefined,
-                        floatFormat,
+                        xchFloatFormat,
                     )} XCH`,
                 );
                 console.log(
@@ -152,7 +158,7 @@ async function impermanence(options, tibetSwap) {
                         record.pair.short_name
                     }: ${record.netXchReturns.toLocaleString(
                         undefined,
-                        floatFormat,
+                        xchFloatFormat,
                     )} XCH impermanence`,
                 );
             }
@@ -160,7 +166,7 @@ async function impermanence(options, tibetSwap) {
         console.log(
             `Total impermanence ${totalXchReturns.toLocaleString(
                 undefined,
-                floatFormat,
+                xchFloatFormat,
             )} XCH`,
         );
     }
@@ -193,12 +199,15 @@ function printSwap(swap) {
         console.log(
             `Added ${addedXch.toLocaleString(
                 undefined,
-                floatFormat,
-            )} XCH and ${addedToken.toLocaleString(undefined, floatFormat)} ${
+                xchFloatFormat,
+            )} XCH and ${addedToken.toLocaleString(
+                undefined,
+                catFloatFormat,
+            )} ${
                 swap.pair.short_name
             } liquidity and received ${receivedToken.toLocaleString(
                 undefined,
-                floatFormat,
+                catFloatFormat,
             )} ${swap.pair.pair_name}`,
         );
     } else if (swap.type === "removal") {
@@ -207,14 +216,17 @@ function printSwap(swap) {
         const receivedToken = Math.abs(swap.requested.token_amount);
 
         console.log(
-            `Removed ${removedToken.toLocaleString(undefined, floatFormat)} ${
+            `Removed ${removedToken.toLocaleString(
+                undefined,
+                catFloatFormat,
+            )} ${
                 swap.pair.short_name
             } liquidity and received ${receivedXch.toLocaleString(
                 undefined,
-                floatFormat,
+                xchFloatFormat,
             )} XCH and ${receivedToken.toLocaleString(
                 undefined,
-                floatFormat,
+                catFloatFormat,
             )} ${swap.pair.short_name}`,
         );
     } else if (swap.type === "consolidated") {
@@ -230,10 +242,10 @@ function printBalance(balance) {
     console.log(
         `Balance of ${xchBalance.toLocaleString(
             undefined,
-            floatFormat,
-        )} XCH, ${tokenBalance.toLocaleString(undefined, floatFormat)} ${
+            xchFloatFormat,
+        )} XCH, ${tokenBalance.toLocaleString(undefined, catFloatFormat)} ${
             balance.pair.short_name
-        }, and ${swapTokenBalance.toLocaleString(undefined, floatFormat)} ${
+        }, and ${swapTokenBalance.toLocaleString(undefined, catFloatFormat)} ${
             balance.pair.pair_name
         }`,
     );
