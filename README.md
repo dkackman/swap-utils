@@ -29,6 +29,7 @@ Commands
                      swaps  Show liquidity swaps.
                      imp    Show estimated impermanent loss.
                      xch    Show the estimated XCH value of current liquidity.
+                     names  Set wallet names from the tibet list.
 
 Options (defaults to Tibet production and localhost chia)
 

@@ -3,6 +3,42 @@ import _debug from "debug";
 const debug = _debug("wallet");
 import _ from "lodash";
 
+export async function setWalletNames(options, tibetSwap) {
+    const chia = new ChiaDaemon(options, "swap-utils");
+    if (!(await chia.connect())) {
+        throw new Error("Could not connect to chia daemon");
+    }
+
+    try {
+        const tokenFilter = getFilter(options);
+        for await (const fingerprint of options.wallet_fingerprints || [null]) {
+            // get all swap offers from all specified wallets
+            for await (const wallet of await getCATWallets(
+                chia,
+                fingerprint,
+                tibetSwap,
+                tokenFilter,
+            )) {
+                const shouldBeName = wallet.is_asset_wallet
+                    ? wallet.pair.name // the asset name
+                    : wallet.pair.pair_name; // the swap token name
+
+                if (wallet.name !== shouldBeName) {
+                    console.log(
+                        `Changing wallet name for ${wallet.name} to ${shouldBeName}`,
+                    );
+                    await chia.services.wallet.cat_set_name({
+                        wallet_id: wallet.id,
+                        name: shouldBeName,
+                    });
+                }
+            }
+        }
+    } finally {
+        chia.disconnect();
+    }
+}
+
 export async function getWalletBalances(options, tibetSwap) {
     const chia = new ChiaDaemon(options, "swap-utils");
     if (!(await chia.connect())) {
@@ -11,15 +47,7 @@ export async function getWalletBalances(options, tibetSwap) {
 
     try {
         let balances = [];
-        const tokenFilter =
-            options.token === undefined
-                ? () => true
-                : (pair) => {
-                      return (
-                          pair.short_name.toUpperCase() ===
-                          options.token.toUpperCase()
-                      );
-                  };
+        const tokenFilter = getFilter(options);
 
         for await (const fingerprint of options.wallet_fingerprints || [null]) {
             // get all swap offers from all specified wallets
@@ -27,7 +55,7 @@ export async function getWalletBalances(options, tibetSwap) {
                 chia,
                 fingerprint,
                 tibetSwap,
-                tokenFilter
+                tokenFilter,
             )) {
                 const balance = await getBalance(chia, wallet, tibetSwap);
                 balances.push(balance);
@@ -35,7 +63,7 @@ export async function getWalletBalances(options, tibetSwap) {
         }
         balances = consolidateBalances(balances);
         return balances.sort((a, b) =>
-            a.pair.pair_name.localeCompare(b.pair.pair_name)
+            a.pair.pair_name.localeCompare(b.pair.pair_name),
         );
     } finally {
         chia.disconnect();
@@ -56,13 +84,16 @@ async function getCATWallets(chia, fingerprint, tibetSwap, tokenFilter) {
     });
     const returns = [];
     for (const wallet of wallets.wallets) {
-        const pair = tibetSwap.getPairByLiquidityTokenId(
-            wallet.data.slice(0, -2) // trailing unicode null char
-        );
+        wallet.asset_id = wallet.data.slice(0, -2); // trailing unicode null char
+        const pair =
+            tibetSwap.getPairByLiquidityTokenId(wallet.asset_id) ??
+            tibetSwap.getPairByAssetId(wallet.asset_id);
+
         if (pair !== undefined && tokenFilter(pair)) {
             debug(`Found wallet for ${pair.pair_name}`);
             wallet.pair = pair;
             wallet.fingerprint = fingerprint;
+            wallet.is_asset_wallet = wallet.asset_id === pair.asset_id;
             returns.push(wallet);
         }
     }
@@ -78,11 +109,11 @@ async function getBalance(chia, wallet, tibetSwap) {
     });
     const liquidityValue = await tibetSwap.getLiquidityValue(
         wallet.pair.pair_id,
-        balance.wallet_balance.confirmed_wallet_balance // convert from tokens to mojo
+        balance.wallet_balance.confirmed_wallet_balance, // convert from tokens to mojo
     );
     const pairValue = await tibetSwap.estimatePairValue(
         wallet.pair.pair_id,
-        liquidityValue.token_amount
+        liquidityValue.token_amount,
     );
     return {
         wallet: wallet,
@@ -127,9 +158,19 @@ function consolidateBalances(balances) {
             result[value.wallet.pair.pair_id] = resultRecord;
             return result;
         },
-        {}
+        {},
     );
 
     // return the resulting value array
     return _.values(grouped);
+}
+
+function getFilter(options) {
+    return options.token === undefined
+        ? () => true
+        : (pair) => {
+              return (
+                  pair.short_name.toUpperCase() === options.token.toUpperCase()
+              );
+          };
 }

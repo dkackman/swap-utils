@@ -2,7 +2,7 @@
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
 import { options, showHelp } from "./commandLine.js";
-import { getWalletBalances } from "./wallets.js";
+import { getWalletBalances, setWalletNames } from "./wallets.js";
 import _ from "lodash";
 
 const xchFloatFormat = {
@@ -29,10 +29,18 @@ if (options.help) {
         await impermanence(options, tibetSwap);
     } else if (options.command === "xch") {
         await xch(options, tibetSwap);
+    } else if (options.command === "names") {
+        await names(options, tibetSwap);
     } else {
         console.error(`Unknown command ${options.command}`);
         showHelp();
     }
+}
+
+async function names(options, tibetSwap) {
+    await setWalletNames(options, tibetSwap);
+
+    console.log("done");
 }
 
 async function xch(options, tibetSwap) {
