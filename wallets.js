@@ -46,11 +46,47 @@ export async function getWalletBalances(options, tibetSwap) {
     }
 
     try {
+        let fingerprints = [];
+        const tokenFilter = getFilter(options);
+
+        for await (const fingerprint of options.wallet_fingerprints || [null]) {
+            const balances = [];
+            for await (const wallet of await getCATWallets(
+                chia,
+                fingerprint,
+                tibetSwap,
+                tokenFilter,
+            )) {
+                const balance = await getBalance(chia, wallet, tibetSwap);
+                balances.push(balance);
+            }
+
+            fingerprints.push({
+                fingerprint: fingerprint,
+                balances: balances.sort((a, b) =>
+                    a.wallet.pair.pair_name.localeCompare(
+                        b.wallet.pair.pair_name,
+                    ),
+                ),
+            });
+        }
+        return fingerprints;
+    } finally {
+        chia.disconnect();
+    }
+}
+
+export async function getConsolidatedWalletBalances(options, tibetSwap) {
+    const chia = new ChiaDaemon(options, "swap-utils");
+    if (!(await chia.connect())) {
+        throw new Error("Could not connect to chia daemon");
+    }
+
+    try {
         let balances = [];
         const tokenFilter = getFilter(options);
 
         for await (const fingerprint of options.wallet_fingerprints || [null]) {
-            // get all swap offers from all specified wallets
             for await (const wallet of await getCATWallets(
                 chia,
                 fingerprint,
@@ -115,6 +151,7 @@ async function getBalance(chia, wallet, tibetSwap) {
         wallet.pair.pair_id,
         liquidityValue.token_amount,
     );
+
     return {
         wallet: wallet,
         wallet_balance: balance.wallet_balance,

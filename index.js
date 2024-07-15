@@ -2,7 +2,11 @@
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
 import { options, showHelp } from "./commandLine.js";
-import { getWalletBalances, setWalletNames } from "./wallets.js";
+import {
+    getConsolidatedWalletBalances,
+    getWalletBalances,
+    setWalletNames,
+} from "./wallets.js";
 import _ from "lodash";
 
 const xchFloatFormat = {
@@ -31,10 +35,38 @@ if (options.help) {
         await xch(options, tibetSwap);
     } else if (options.command === "names") {
         await names(options, tibetSwap);
+    } else if (options.command === "balances") {
+        await balances(options, tibetSwap);
     } else {
         console.error(`Unknown command ${options.command}`);
         showHelp();
     }
+}
+
+async function balances(options, tibetSwap) {
+    const fingerprints = await getWalletBalances(options, tibetSwap);
+    for (const fingerprint of fingerprints) {
+        console.log(`Fingerprint ${fingerprint.fingerprint}`);
+        for (const balance of fingerprint.balances.filter(
+            (b) => b.wallet.is_asset_wallet,
+        )) {
+            if (
+                options.verbose ||
+                balance.wallet_balance.confirmed_wallet_balance > 0
+            ) {
+                console.log(
+                    `\t${balance.wallet.name}: ${(
+                        balance.wallet_balance.confirmed_wallet_balance / 1000
+                    ).toLocaleString(
+                        undefined,
+                        catFloatFormat,
+                    )} ${balance.wallet.pair.short_name}`,
+                );
+            }
+        }
+    }
+
+    console.log("done");
 }
 
 async function names(options, tibetSwap) {
@@ -44,7 +76,7 @@ async function names(options, tibetSwap) {
 }
 
 async function xch(options, tibetSwap) {
-    const balances = await getWalletBalances(options, tibetSwap);
+    const balances = await getConsolidatedWalletBalances(options, tibetSwap);
     let total = 0.0;
     for (const balance of balances) {
         total += balance.total_xch_value;
