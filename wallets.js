@@ -123,9 +123,10 @@ async function getCATWallets(chia, fingerprint, tibetSwap, tokenFilter) {
         wallet.asset_id = wallet.data.slice(0, -2); // trailing unicode null char
         const pair =
             tibetSwap.getPairByLiquidityTokenId(wallet.asset_id) ??
-            tibetSwap.getPairByAssetId(wallet.asset_id);
+            tibetSwap.getPairByAssetId(wallet.asset_id) ??
+            createBlankPair(wallet);
 
-        if (pair !== undefined && tokenFilter(pair)) {
+        if (tokenFilter(pair)) {
             debug(`Found wallet for ${pair.pair_name}`);
             wallet.pair = pair;
             wallet.fingerprint = fingerprint;
@@ -136,6 +137,17 @@ async function getCATWallets(chia, fingerprint, tibetSwap, tokenFilter) {
     return returns;
 }
 
+function createBlankPair(wallet) {
+    return {
+        asset_id: wallet.asset_id,
+        pair_id: wallet.asset_id,
+        name: wallet.name,
+        short_name: wallet.asset_id.substring(0, 5),
+        image_url: "",
+        verified: false,
+        pair_name: "",
+    };
+}
 async function getBalance(chia, wallet, tibetSwap) {
     await chia.services.wallet.log_in({
         fingerprint: wallet.fingerprint,
