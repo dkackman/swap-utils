@@ -3,107 +3,145 @@ import _debug from "debug";
 const debug = _debug("wallet");
 import _ from "lodash";
 
-export async function setWalletNames(options, tibetSwap) {
-    const chia = new ChiaDaemon(options, "swap-utils");
-    if (!(await chia.connect())) {
-        throw new Error("Could not connect to chia daemon");
-    }
+export async function setWalletNames(chia, options, tibetSwap) {
+    const tokenFilter = getFilter(options);
+    for await (const fingerprint of options.wallet_fingerprints || [null]) {
+        // get all swap offers from all specified wallets
+        for await (const wallet of await getCATWallets(
+            chia,
+            fingerprint,
+            tibetSwap,
+            tokenFilter,
+        )) {
+            const shouldBeName = wallet.is_asset_wallet
+                ? wallet.pair.name // the asset name
+                : wallet.pair.pair_name; // the swap token name
 
-    try {
-        const tokenFilter = getFilter(options);
-        for await (const fingerprint of options.wallet_fingerprints || [null]) {
-            // get all swap offers from all specified wallets
-            for await (const wallet of await getCATWallets(
-                chia,
-                fingerprint,
-                tibetSwap,
-                tokenFilter,
-            )) {
-                const shouldBeName = wallet.is_asset_wallet
-                    ? wallet.pair.name // the asset name
-                    : wallet.pair.pair_name; // the swap token name
-
-                if (wallet.name !== shouldBeName) {
-                    console.log(
-                        `Changing wallet name for ${wallet.name} to ${shouldBeName}`,
-                    );
-                    await chia.services.wallet.cat_set_name({
-                        wallet_id: wallet.id,
-                        name: shouldBeName,
-                    });
-                }
+            if (wallet.name !== shouldBeName) {
+                console.log(
+                    `Changing wallet name for ${wallet.name} to ${shouldBeName}`,
+                );
+                await chia.services.wallet.cat_set_name({
+                    wallet_id: wallet.id,
+                    name: shouldBeName,
+                });
             }
         }
-    } finally {
-        chia.disconnect();
     }
 }
 
-export async function getWalletBalances(options, tibetSwap) {
-    const chia = new ChiaDaemon(options, "swap-utils");
-    if (!(await chia.connect())) {
-        throw new Error("Could not connect to chia daemon");
-    }
+export async function getWalletBalances(chia, options, tibetSwap) {
+    let fingerprints = [];
+    const tokenFilter = getFilter(options);
 
-    try {
-        let fingerprints = [];
-        const tokenFilter = getFilter(options);
-
-        for await (const fingerprint of options.wallet_fingerprints || [null]) {
-            const balances = [];
-            for await (const wallet of await getCATWallets(
-                chia,
-                fingerprint,
-                tibetSwap,
-                tokenFilter,
-            )) {
-                const balance = await getBalance(chia, wallet, tibetSwap);
-                balances.push(balance);
-            }
-
-            fingerprints.push({
-                fingerprint: fingerprint,
-                balances: balances.sort((a, b) =>
-                    a.wallet.pair.pair_name.localeCompare(
-                        b.wallet.pair.pair_name,
-                    ),
-                ),
-            });
-        }
-        return fingerprints;
-    } finally {
-        chia.disconnect();
-    }
-}
-
-export async function getConsolidatedWalletBalances(options, tibetSwap) {
-    const chia = new ChiaDaemon(options, "swap-utils");
-    if (!(await chia.connect())) {
-        throw new Error("Could not connect to chia daemon");
-    }
-
-    try {
-        let balances = [];
-        const tokenFilter = getFilter(options);
-
-        for await (const fingerprint of options.wallet_fingerprints || [null]) {
-            for await (const wallet of await getCATWallets(
-                chia,
-                fingerprint,
-                tibetSwap,
-                tokenFilter,
-            )) {
-                const balance = await getBalance(chia, wallet, tibetSwap);
-                balances.push(balance);
-            }
-        }
-        balances = consolidateBalances(balances);
-        return balances.sort((a, b) =>
-            a.pair.pair_name.localeCompare(b.pair.pair_name),
+    for await (const fingerprint of options.wallet_fingerprints || [null]) {
+        const balances = await getBalancesForFingerprint(
+            chia,
+            fingerprint,
+            tibetSwap,
+            tokenFilter,
         );
-    } finally {
-        chia.disconnect();
+
+        fingerprints.push({
+            fingerprint: fingerprint,
+            balances: balances.sort((a, b) =>
+                a.wallet.pair.pair_name.localeCompare(b.wallet.pair.pair_name),
+            ),
+        });
     }
+    return fingerprints;
+}
+
+export async function getFee(chia) {
+    const fee = await chia.services.full_node.get_fee_estimate({
+        target_times: [300],
+        spend_type: "send_xch_transaction",
+    });
+
+    return fee.estimates[0];
+}
+
+export async function getChia(options) {
+    const chia = new ChiaDaemon(options, "swap-utils");
+    if (!(await chia.connect())) {
+        throw new Error("Could not connect to chia daemon");
+    }
+    return chia;
+}
+
+export async function sendCat(chia, walletId, address, amount, fee) {
+    const transaction = await chia.services.wallet.cat_spend({
+        wallet_id: walletId,
+        inner_address: address,
+        amount: amount,
+        fee: fee,
+    });
+
+    return transaction;
+}
+
+export async function getSwappableWalletBalances(chia, options, tibetSwap) {
+    if (
+        !Array.isArray(options.wallet_fingerprints) ||
+        options.wallet_fingerprints.length === 0
+    ) {
+        throw new Error("No source fingerprint provided");
+    }
+    const tokenFilter = getFilter(options);
+    const fingerprint = options.wallet_fingerprints[0];
+    const balances = await getBalancesForFingerprint(
+        chia,
+        fingerprint,
+        tibetSwap,
+        tokenFilter,
+    );
+
+    return {
+        fingerprint: fingerprint,
+        balances: balances.sort((a, b) =>
+            a.wallet.pair.pair_name.localeCompare(b.wallet.pair.pair_name),
+        ),
+    };
+}
+
+async function getBalancesForFingerprint(
+    chia,
+    fingerprint,
+    tibetSwap,
+    tokenFilter,
+) {
+    const balances = [];
+    for await (const wallet of await getCATWallets(
+        chia,
+        fingerprint,
+        tibetSwap,
+        tokenFilter,
+    )) {
+        const balance = await getBalance(chia, wallet, tibetSwap);
+        balances.push(balance);
+    }
+    return balances;
+}
+
+export async function getConsolidatedWalletBalances(chia, options, tibetSwap) {
+    let balances = [];
+    const tokenFilter = getFilter(options);
+
+    for await (const fingerprint of options.wallet_fingerprints || [null]) {
+        for await (const wallet of await getCATWallets(
+            chia,
+            fingerprint,
+            tibetSwap,
+            tokenFilter,
+        )) {
+            const balance = await getBalance(chia, wallet, tibetSwap);
+            balances.push(balance);
+        }
+    }
+    balances = consolidateBalances(balances);
+    return balances.sort((a, b) =>
+        a.pair.pair_name.localeCompare(b.pair.pair_name),
+    );
 }
 
 async function getCATWallets(chia, fingerprint, tibetSwap, tokenFilter) {
@@ -148,6 +186,7 @@ function createBlankPair(wallet) {
         pair_name: "",
     };
 }
+
 async function getBalance(chia, wallet, tibetSwap) {
     await chia.services.wallet.log_in({
         fingerprint: wallet.fingerprint,

@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
-import { options, showHelp } from "./commandLine.js";
+import { options, showHelp, askUserToProceed } from "./commandLine.js";
 import {
     getConsolidatedWalletBalances,
     getWalletBalances,
     setWalletNames,
+    getSwappableWalletBalances,
+    getChia,
+    getFee,
+    sendCat,
 } from "./wallets.js";
 import _ from "lodash";
 
@@ -37,55 +41,120 @@ if (options.help) {
         await names(options, tibetSwap);
     } else if (options.command === "balances") {
         await balances(options, tibetSwap);
+    } else if (options.command === "move") {
+        await moveBalances(options, tibetSwap);
     } else {
         console.error(`Unknown command ${options.command}`);
         showHelp();
     }
 }
 
-async function balances(options, tibetSwap) {
-    const fingerprints = await getWalletBalances(options, tibetSwap);
-    for (const fingerprint of fingerprints) {
-        console.log(`Fingerprint ${fingerprint.fingerprint}`);
+async function moveBalances(options, tibetSwap) {
+    const chia = await getChia(options);
+    try {
+        const fingerprint = await getSwappableWalletBalances(
+            chia,
+            options,
+            tibetSwap,
+        );
+        const walletAddress = options.wallet_address;
+        const fee = await getFee(chia);
+
+        console.log(`Moving swappable balances to ${walletAddress}`);
+        const proceed = await askUserToProceed(
+            `Do you want to proceed with moving balances with a fee of ${fee} mojos? (yes/no): `,
+        );
+
+        if (!proceed) {
+            console.log("Operation cancelled by the user.");
+            return;
+        }
+
         for (const balance of fingerprint.balances.filter(
-            (b) => b.wallet.is_asset_wallet,
+            (b) => b.wallet.is_asset_wallet && b.wallet.pair.verified,
         )) {
             if (
                 options.verbose ||
-                balance.wallet_balance.confirmed_wallet_balance > 0
+                balance.wallet_balance.spendable_balance > 0
             ) {
                 console.log(
-                    `\t${balance.wallet.name}: ${(
-                        balance.wallet_balance.confirmed_wallet_balance / 1000
-                    ).toLocaleString(
-                        undefined,
-                        catFloatFormat,
-                    )} ${balance.wallet.pair.short_name}`,
+                    `Sending ${balance.wallet_balance.confirmed_wallet_balance / 1000} ${balance.wallet.pair.short_name} to ${walletAddress}`,
+                );
+                await sendCat(
+                    chia,
+                    balance.wallet.id,
+                    walletAddress,
+                    balance.wallet_balance.spendable_balance,
+                    fee,
                 );
             }
         }
+    } finally {
+        chia.disconnect();
     }
+    console.log("done");
+}
 
+async function balances(options, tibetSwap) {
+    const chia = await getChia(options);
+    try {
+        const fingerprints = await getWalletBalances(chia, options, tibetSwap);
+        for (const fingerprint of fingerprints) {
+            console.log(`Fingerprint ${fingerprint.fingerprint}`);
+            for (const balance of fingerprint.balances.filter(
+                (b) => b.wallet.is_asset_wallet,
+            )) {
+                if (
+                    options.verbose ||
+                    balance.wallet_balance.confirmed_wallet_balance > 0
+                ) {
+                    console.log(
+                        `\t${balance.wallet.name}: ${(
+                            balance.wallet_balance.confirmed_wallet_balance /
+                            1000
+                        ).toLocaleString(
+                            undefined,
+                            catFloatFormat,
+                        )} ${balance.wallet.pair.short_name}`,
+                    );
+                }
+            }
+        }
+    } finally {
+        chia.disconnect();
+    }
     console.log("done");
 }
 
 async function names(options, tibetSwap) {
-    await setWalletNames(options, tibetSwap);
-
+    const chia = await getChia(options);
+    try {
+        await setWalletNames(chia, options, tibetSwap);
+    } finally {
+        chia.disconnect();
+    }
     console.log("done");
 }
 
 async function xch(options, tibetSwap) {
-    const balances = await getConsolidatedWalletBalances(options, tibetSwap);
-    let total = 0.0;
-    for (const balance of balances) {
-        total += balance.total_xch_value;
-        printXchBalance(options, balance);
+    const chia = await getChia(options);
+    try {
+        const balances = await getConsolidatedWalletBalances(
+            chia,
+            options,
+            tibetSwap,
+        );
+        let total = 0.0;
+        for (const balance of balances) {
+            total += balance.total_xch_value;
+            printXchBalance(options, balance);
+        }
+        console.log(
+            `Total: ${total.toLocaleString(undefined, xchFloatFormat)} XCH`,
+        );
+    } finally {
+        chia.disconnect();
     }
-
-    console.log(
-        `Total: ${total.toLocaleString(undefined, xchFloatFormat)} XCH`,
-    );
 }
 
 function printXchBalance(options, balance) {

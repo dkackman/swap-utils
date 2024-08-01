@@ -49,6 +49,7 @@ export default class TibetSwap {
                 asset_id: "xch",
                 name: "XCH",
                 short_name: "XCH",
+                verified: true,
             };
         }
 
@@ -60,6 +61,7 @@ export default class TibetSwap {
 
         return {
             ...token,
+            verified: true,
             pair_name: `TIBET-${token.short_name}-XCH`,
         };
     }

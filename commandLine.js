@@ -1,5 +1,6 @@
 import commandLineUsage from "command-line-usage";
 import commandLineArgs from "command-line-args";
+import * as readline from "node:readline/promises";
 
 const commandList = [
     {
@@ -12,7 +13,9 @@ const commandList = [
             "swaps\tShow liquidity swaps.\n" +
             "imp\tShow estimated impermanent loss.\n" +
             "xch\tShow the estimated XCH value of current liquidity.\n" +
-            "names\tSet wallet names from the tibet list.\n",
+            "names\tSet wallet names from the tibet list.\n" +
+            "balances\tShow the balance of CAT wallets\n" +
+            "moveSend the balance of tibet verified CAT wallets to a single address\n",
     },
 ];
 
@@ -66,6 +69,12 @@ const optionsList = [
         alias: "f",
         type: Number,
         description: "Optional list of wallet fingerprints.",
+    },
+    {
+        name: "wallet_address",
+        alias: "w",
+        type: String,
+        description: "A wallet address to send CATs to.",
     },
     {
         name: "tibet_api_uri",
@@ -126,4 +135,15 @@ export function showHelp() {
     ]);
 
     console.log(usage);
+}
+
+export async function askUserToProceed(question) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    const answer = await rl.question(question);
+    rl.close();
+    return answer.toLowerCase() === "yes" || answer.toLowerCase() === "y";
 }
