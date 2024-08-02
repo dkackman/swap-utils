@@ -6,10 +6,10 @@ import {
     getConsolidatedWalletBalances,
     getWalletBalances,
     setWalletNames,
-    getSwappableWalletBalances,
     getChia,
     getFee,
     sendCat,
+    waitForSync,
 } from "./wallets.js";
 import _ from "lodash";
 
@@ -52,11 +52,7 @@ if (options.help) {
 async function moveBalances(options, tibetSwap) {
     const chia = await getChia(options);
     try {
-        const fingerprint = await getSwappableWalletBalances(
-            chia,
-            options,
-            tibetSwap,
-        );
+        const fingerprints = await getWalletBalances(chia, options, tibetSwap);
         const walletAddress = options.wallet_address;
         const fee = await getFee(chia);
 
@@ -69,24 +65,28 @@ async function moveBalances(options, tibetSwap) {
             console.log("Operation cancelled by the user.");
             return;
         }
+        for (const fingerprint of fingerprints) {
+            console.log(`Fingerprint ${fingerprint.fingerprint}`);
 
-        for (const balance of fingerprint.balances.filter(
-            (b) => b.wallet.is_asset_wallet && b.wallet.pair.verified,
-        )) {
-            if (
-                options.verbose ||
-                balance.wallet_balance.spendable_balance > 0
-            ) {
-                console.log(
-                    `Sending ${balance.wallet_balance.confirmed_wallet_balance / 1000} ${balance.wallet.pair.short_name} to ${walletAddress}`,
-                );
-                await sendCat(
-                    chia,
-                    balance.wallet.id,
-                    walletAddress,
-                    balance.wallet_balance.spendable_balance,
-                    fee,
-                );
+            for (const balance of fingerprint.balances.filter(
+                (b) => b.wallet.is_asset_wallet && b.wallet.pair.verified,
+            )) {
+                if (
+                    options.verbose ||
+                    balance.wallet_balance.spendable_balance > 0
+                ) {
+                    console.log(
+                        `Sending ${balance.wallet_balance.confirmed_wallet_balance / 1000} ${balance.wallet.pair.short_name} to ${walletAddress}`,
+                    );
+                    await waitForSync(chia);
+                    await sendCat(
+                        chia,
+                        balance.wallet.id,
+                        walletAddress,
+                        balance.wallet_balance.spendable_balance,
+                        fee,
+                    );
+                }
             }
         }
     } finally {

@@ -3,6 +3,23 @@ import _debug from "debug";
 const debug = _debug("wallet");
 import _ from "lodash";
 
+export async function getChia(options) {
+    const chia = new ChiaDaemon(options, "swap-utils");
+    if (!(await chia.connect())) {
+        throw new Error("Could not connect to chia daemon");
+    }
+    return chia;
+}
+
+export async function waitForSync(chia, millisecondsDelay = 10000) {
+    let status = await chia.services.wallet.get_sync_status();
+
+    while (!status.synced) {
+        await new Promise((resolve) => setTimeout(resolve, millisecondsDelay));
+        status = await getChia.services.wallet.get_sync_status();
+    }
+}
+
 export async function setWalletNames(chia, options, tibetSwap) {
     const tokenFilter = getFilter(options);
     for await (const fingerprint of options.wallet_fingerprints || [null]) {
@@ -49,6 +66,7 @@ export async function getWalletBalances(chia, options, tibetSwap) {
             ),
         });
     }
+
     return fingerprints;
 }
 
@@ -61,14 +79,6 @@ export async function getFee(chia) {
     return fee.estimates[0];
 }
 
-export async function getChia(options) {
-    const chia = new ChiaDaemon(options, "swap-utils");
-    if (!(await chia.connect())) {
-        throw new Error("Could not connect to chia daemon");
-    }
-    return chia;
-}
-
 export async function sendCat(chia, walletId, address, amount, fee) {
     const transaction = await chia.services.wallet.cat_spend({
         wallet_id: walletId,
@@ -78,30 +88,6 @@ export async function sendCat(chia, walletId, address, amount, fee) {
     });
 
     return transaction;
-}
-
-export async function getSwappableWalletBalances(chia, options, tibetSwap) {
-    if (
-        !Array.isArray(options.wallet_fingerprints) ||
-        options.wallet_fingerprints.length === 0
-    ) {
-        throw new Error("No source fingerprint provided");
-    }
-    const tokenFilter = getFilter(options);
-    const fingerprint = options.wallet_fingerprints[0];
-    const balances = await getBalancesForFingerprint(
-        chia,
-        fingerprint,
-        tibetSwap,
-        tokenFilter,
-    );
-
-    return {
-        fingerprint: fingerprint,
-        balances: balances.sort((a, b) =>
-            a.wallet.pair.pair_name.localeCompare(b.wallet.pair.pair_name),
-        ),
-    };
 }
 
 async function getBalancesForFingerprint(
