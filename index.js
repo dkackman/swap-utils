@@ -2,15 +2,7 @@
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
 import { options, showHelp, askUserToProceed } from "./commandLine.js";
-import {
-    getConsolidatedWalletBalances,
-    getWalletBalances,
-    setWalletNames,
-    getChia,
-    getFee,
-    sendCat,
-    waitForSync,
-} from "./wallets.js";
+import { ChiaWalletManager, getChia } from "./wallets.js";
 import _ from "lodash";
 
 const xchFloatFormat = {
@@ -52,9 +44,9 @@ if (options.help) {
 async function moveBalances(options, tibetSwap) {
     const chia = await getChia(options);
     try {
-        const fingerprints = await getWalletBalances(chia, options, tibetSwap);
+        const fingerprints = await chia.getWalletBalances(tibetSwap);
         const walletAddress = options.wallet_address;
-        const fee = await getFee(chia);
+        const fee = await chia.getFee();
 
         console.log(`Moving swappable balances to ${walletAddress}`);
         const proceed = await askUserToProceed(
@@ -78,9 +70,8 @@ async function moveBalances(options, tibetSwap) {
                     console.log(
                         `Sending ${balance.wallet_balance.confirmed_wallet_balance / 1000} ${balance.wallet.pair.short_name} to ${walletAddress}`,
                     );
-                    await waitForSync(chia);
-                    await sendCat(
-                        chia,
+                    await chia.waitForSync();
+                    await chia.sendCat(
                         balance.wallet.id,
                         walletAddress,
                         balance.wallet_balance.spendable_balance,
@@ -98,7 +89,7 @@ async function moveBalances(options, tibetSwap) {
 async function balances(options, tibetSwap) {
     const chia = await getChia(options);
     try {
-        const fingerprints = await getWalletBalances(chia, options, tibetSwap);
+        const fingerprints = await chia.getWalletBalances(tibetSwap);
         for (const fingerprint of fingerprints) {
             console.log(`Fingerprint ${fingerprint.fingerprint}`);
             for (const balance of fingerprint.balances.filter(
@@ -129,7 +120,7 @@ async function balances(options, tibetSwap) {
 async function names(options, tibetSwap) {
     const chia = await getChia(options);
     try {
-        await setWalletNames(chia, options, tibetSwap);
+        await chia.setWalletNames(tibetSwap);
     } finally {
         chia.disconnect();
     }
@@ -139,11 +130,7 @@ async function names(options, tibetSwap) {
 async function xch(options, tibetSwap) {
     const chia = await getChia(options);
     try {
-        const balances = await getConsolidatedWalletBalances(
-            chia,
-            options,
-            tibetSwap,
-        );
+        const balances = await chia.getConsolidatedWalletBalances(tibetSwap);
         let total = 0.0;
         for (const balance of balances) {
             total += balance.total_xch_value;
