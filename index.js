@@ -2,7 +2,7 @@
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
 import { options, showHelp, askUserToProceed } from "./commandLine.js";
-import { ChiaWalletManager, getChia } from "./wallets.js";
+import { getChia } from "./wallets.js";
 import _ from "lodash";
 
 const xchFloatFormat = {
@@ -42,14 +42,15 @@ if (options.help) {
 }
 
 async function moveBalances(options, tibetSwap) {
-    const chia = await getChia(options);
+    const chia = await getChia(options, tibetSwap);
     try {
-        const fingerprints = await chia.getWalletBalances(tibetSwap);
+        const fingerprints = await chia.getWalletBalances();
         const walletAddress = options.wallet_address;
         const fee = await chia.getFee();
 
         console.log(`Moving swappable balances to ${walletAddress}`);
         const proceed = await askUserToProceed(
+            options,
             `Do you want to proceed with moving balances with a fee of ${fee} mojos? (yes/no): `,
         );
 
@@ -87,9 +88,11 @@ async function moveBalances(options, tibetSwap) {
 }
 
 async function balances(options, tibetSwap) {
-    const chia = await getChia(options);
+    const chia = await getChia(options, tibetSwap);
     try {
-        const fingerprints = await chia.getWalletBalances(tibetSwap);
+        await chia.waitForSync();
+        const fingerprints = await chia.getWalletBalances();
+
         for (const fingerprint of fingerprints) {
             console.log(`Fingerprint ${fingerprint.fingerprint}`);
             for (const balance of fingerprint.balances.filter(
@@ -118,9 +121,9 @@ async function balances(options, tibetSwap) {
 }
 
 async function names(options, tibetSwap) {
-    const chia = await getChia(options);
+    const chia = await getChia(options, tibetSwap);
     try {
-        await chia.setWalletNames(tibetSwap);
+        await chia.setWalletNames();
     } finally {
         chia.disconnect();
     }
@@ -128,9 +131,9 @@ async function names(options, tibetSwap) {
 }
 
 async function xch(options, tibetSwap) {
-    const chia = await getChia(options);
+    const chia = await getChia(options, tibetSwap);
     try {
-        const balances = await chia.getConsolidatedWalletBalances(tibetSwap);
+        const balances = await chia.getConsolidatedWalletBalances();
         let total = 0.0;
         for (const balance of balances) {
             total += balance.total_xch_value;

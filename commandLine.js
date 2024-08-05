@@ -36,6 +36,13 @@ const optionsList = [
         description: "Show verbose details.",
     },
     {
+        name: "no-prompt",
+        alias: "s",
+        type: Boolean,
+        defaultValue: false,
+        description: "Suppress prompts.",
+    },
+    {
         name: "host",
         alias: "d",
         type: String,
@@ -137,7 +144,11 @@ export function showHelp() {
     console.log(usage);
 }
 
-export async function askUserToProceed(question) {
+export async function askUserToProceed(options, question) {
+    if (options["no-prompt"]) {
+        return true;
+    }
+
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,

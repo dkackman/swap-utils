@@ -3,15 +3,16 @@ import _debug from "debug";
 const debug = _debug("wallet");
 import _ from "lodash";
 
-export async function getChia(options) {
-    const chia = new ChiaWalletManager(options);
+export async function getChia(options, tibetSwap) {
+    const chia = new ChiaWalletManager(options, tibetSwap);
     await chia.connect();
     return chia;
 }
 
 export class ChiaWalletManager {
-    constructor(options) {
+    constructor(options, tibetSwap) {
         this.options = options;
+        this.tibetSwap = tibetSwap;
         this.chia = null;
     }
 
@@ -23,9 +24,9 @@ export class ChiaWalletManager {
     }
 
     disconnect() {
-        if (this.chia !== undefined) {
+        if (this.chia !== null) {
             this.chia.disconnect();
-            this.chia = undefined;
+            this.chia = null;
         }
     }
 
@@ -40,14 +41,13 @@ export class ChiaWalletManager {
         }
     }
 
-    async setWalletNames(tibetSwap) {
+    async setWalletNames() {
         const tokenFilter = this.getFilter(this.options);
         for await (const fingerprint of this.options.wallet_fingerprints || [
             null,
         ]) {
             for await (const wallet of await this.getCATWallets(
                 fingerprint,
-                tibetSwap,
                 tokenFilter,
             )) {
                 const shouldBeName = wallet.is_asset_wallet
@@ -67,7 +67,7 @@ export class ChiaWalletManager {
         }
     }
 
-    async getWalletBalances(tibetSwap) {
+    async getWalletBalances() {
         let fingerprints = [];
         const tokenFilter = this.getFilter(this.options);
 
@@ -76,7 +76,6 @@ export class ChiaWalletManager {
         ]) {
             const balances = await this.getBalancesForFingerprint(
                 fingerprint,
-                tibetSwap,
                 tokenFilter,
             );
 
@@ -113,7 +112,7 @@ export class ChiaWalletManager {
         return transaction;
     }
 
-    async getConsolidatedWalletBalances(tibetSwap) {
+    async getConsolidatedWalletBalances() {
         let balances = [];
         const tokenFilter = this.getFilter(this.options);
 
@@ -122,10 +121,9 @@ export class ChiaWalletManager {
         ]) {
             for await (const wallet of await this.getCATWallets(
                 fingerprint,
-                tibetSwap,
                 tokenFilter,
             )) {
-                const balance = await this.getBalance(wallet, tibetSwap);
+                const balance = await this.getBalance(wallet);
                 balances.push(balance);
             }
         }
@@ -135,20 +133,19 @@ export class ChiaWalletManager {
         );
     }
 
-    async getBalancesForFingerprint(fingerprint, tibetSwap, tokenFilter) {
+    async getBalancesForFingerprint(fingerprint, tokenFilter) {
         const balances = [];
         for await (const wallet of await this.getCATWallets(
             fingerprint,
-            tibetSwap,
             tokenFilter,
         )) {
-            const balance = await this.getBalance(wallet, tibetSwap);
+            const balance = await this.getBalance(wallet);
             balances.push(balance);
         }
         return balances;
     }
 
-    async getCATWallets(fingerprint, tibetSwap, tokenFilter) {
+    async getCATWallets(fingerprint, tokenFilter) {
         if (fingerprint !== null) {
             await this.chia.services.wallet.log_in({
                 fingerprint: fingerprint,
@@ -162,8 +159,8 @@ export class ChiaWalletManager {
         for (const wallet of wallets.wallets) {
             wallet.asset_id = wallet.data.slice(0, -2);
             const pair =
-                tibetSwap.getPairByLiquidityTokenId(wallet.asset_id) ??
-                tibetSwap.getPairByAssetId(wallet.asset_id) ??
+                this.tibetSwap.getPairByLiquidityTokenId(wallet.asset_id) ??
+                this.tibetSwap.getPairByAssetId(wallet.asset_id) ??
                 this.createBlankPair(wallet);
 
             if (tokenFilter(pair)) {
@@ -189,18 +186,18 @@ export class ChiaWalletManager {
         };
     }
 
-    async getBalance(wallet, tibetSwap) {
+    async getBalance(wallet) {
         await this.chia.services.wallet.log_in({
             fingerprint: wallet.fingerprint,
         });
         const balance = await this.chia.services.wallet.get_wallet_balance({
             wallet_id: wallet.id,
         });
-        const liquidityValue = await tibetSwap.getLiquidityValue(
+        const liquidityValue = await this.tibetSwap.getLiquidityValue(
             wallet.pair.pair_id,
             balance.wallet_balance.confirmed_wallet_balance,
         );
-        const pairValue = await tibetSwap.estimatePairValue(
+        const pairValue = await this.tibetSwap.estimatePairValue(
             wallet.pair.pair_id,
             liquidityValue.token_amount,
         );
