@@ -44,20 +44,21 @@ if (options.help) {
 async function moveBalances(options, tibetSwap) {
     const chia = await getChia(options, tibetSwap);
     try {
-        const fingerprints = await chia.getWalletBalances();
-        const walletAddress = options.wallet_address;
         const fee = await chia.getFee();
+        const walletAddress = options.wallet_address;
 
-        console.log(`Moving swappable balances to ${walletAddress}`);
         const proceed = await askUserToProceed(
             options,
-            `Do you want to proceed with moving balances with a fee of ${fee} mojos? (yes/no): `,
+            `Do you want to proceed with moving balances to ${walletAddress} with a fee of ${fee} mojos? (yes/no): `,
         );
 
         if (!proceed) {
             console.log("Operation cancelled by the user.");
             return;
         }
+
+        await chia.waitForSync();
+        const fingerprints = await chia.getWalletBalances();
         for (const fingerprint of fingerprints) {
             console.log(`Fingerprint ${fingerprint.fingerprint}`);
 
