@@ -190,6 +190,7 @@ export class ChiaWalletManager {
         await this.chia.services.wallet.log_in({
             fingerprint: wallet.fingerprint,
         });
+        await this.waitForSync();
         const balance = await this.chia.services.wallet.get_wallet_balance({
             wallet_id: wallet.id,
         });

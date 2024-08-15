@@ -57,7 +57,6 @@ async function moveBalances(options, tibetSwap) {
             return;
         }
 
-        await chia.waitForSync();
         const fingerprints = await chia.getWalletBalances();
         for (const fingerprint of fingerprints) {
             console.log(`Fingerprint ${fingerprint.fingerprint}`);
@@ -91,7 +90,6 @@ async function moveBalances(options, tibetSwap) {
 async function balances(options, tibetSwap) {
     const chia = await getChia(options, tibetSwap);
     try {
-        await chia.waitForSync();
         const fingerprints = await chia.getWalletBalances();
 
         for (const fingerprint of fingerprints) {
