@@ -91,12 +91,13 @@ async function balances(options, tibetSwap) {
     const chia = await getChia(options, tibetSwap);
     try {
         const fingerprints = await chia.getWalletBalances();
+        const filter = options["include-pair-tokens"]
+            ? () => true
+            : (b) => b.wallet.is_asset_wallet;
 
         for (const fingerprint of fingerprints) {
             console.log(`Fingerprint ${fingerprint.fingerprint}`);
-            for (const balance of fingerprint.balances.filter(
-                (b) => b.wallet.is_asset_wallet,
-            )) {
+            for (const balance of fingerprint.balances.filter(filter)) {
                 if (
                     options.verbose ||
                     balance.wallet_balance.confirmed_wallet_balance > 0

@@ -15,7 +15,7 @@ const commandList = [
             "xch\tShow the estimated XCH value of current liquidity.\n" +
             "names\tSet wallet names from the tibet list.\n" +
             "balances\tShow the balance of CAT wallets\n" +
-            "moveSend the balance of tibet verified CAT wallets to a single address\n",
+            "move\tSend the balance of tibet verified CAT wallets to a single address\n",
     },
 ];
 
@@ -37,10 +37,15 @@ const optionsList = [
     },
     {
         name: "no-prompt",
-        alias: "s",
         type: Boolean,
         defaultValue: false,
         description: "Suppress prompts.",
+    },
+    {
+        name: "include-pair-tokens",
+        type: Boolean,
+        defaultValue: false,
+        description: "Include tibet pair tokens when showing balances.",
     },
     {
         name: "host",

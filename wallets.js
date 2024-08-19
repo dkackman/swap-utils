@@ -151,12 +151,12 @@ export class ChiaWalletManager {
                 fingerprint: fingerprint,
             });
         }
-        const wallets = await this.chia.services.wallet.get_wallets({
+        const catWallets = await this.chia.services.wallet.get_wallets({
             type: 6,
             include_data: true,
         });
-        const returns = [];
-        for (const wallet of wallets.wallets) {
+        const walletData = [];
+        for (const wallet of catWallets.wallets) {
             wallet.asset_id = wallet.data.slice(0, -2);
             const pair =
                 this.tibetSwap.getPairByLiquidityTokenId(wallet.asset_id) ??
@@ -168,10 +168,10 @@ export class ChiaWalletManager {
                 wallet.pair = pair;
                 wallet.fingerprint = fingerprint;
                 wallet.is_asset_wallet = wallet.asset_id === pair.asset_id;
-                returns.push(wallet);
+                walletData.push(wallet);
             }
         }
-        return returns;
+        return walletData;
     }
 
     createBlankPair(wallet) {
