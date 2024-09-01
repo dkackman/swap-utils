@@ -17,10 +17,16 @@ export class ChiaWalletManager {
     }
 
     async connect() {
-        this.chia = new ChiaDaemon(this.options, "swap-utils");
-        if (!(await this.chia.connect())) {
+        if (this.chia !== null) {
+            throw new Error("Already connected to chia daemon");
+        }
+
+        const chia = new ChiaDaemon(this.options, "swap-utils");
+        if (!(await chia.connect())) {
             throw new Error("Could not connect to chia daemon");
         }
+
+        this.chia = chia;
     }
 
     disconnect() {
@@ -32,7 +38,6 @@ export class ChiaWalletManager {
 
     async waitForSync(millisecondsDelay = 10000) {
         let status = await this.chia.services.wallet.get_sync_status();
-
         while (!status.synced) {
             await new Promise((resolve) =>
                 setTimeout(resolve, millisecondsDelay),
