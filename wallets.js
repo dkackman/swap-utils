@@ -37,8 +37,11 @@ export class ChiaWalletManager {
     }
 
     async waitForSync(millisecondsDelay = 10000) {
-        console.log("Waiting for wallet sync...");
         let status = await this.chia.services.wallet.get_sync_status();
+        if (!status.synced) {
+            console.log("Waiting for wallet sync...");
+        }
+
         while (!status.synced) {
             await new Promise((resolve) =>
                 setTimeout(resolve, millisecondsDelay),
