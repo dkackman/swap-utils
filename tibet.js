@@ -12,6 +12,7 @@ export default class TibetSwap {
     }
 
     async loadTokenList() {
+        console.log("Loading token list...");
         const cache = new Cache(this.apiUri, this.analyticsUri);
         const cacheData = await cache.loadTokenList();
         this.tokens = cacheData.tokens;
