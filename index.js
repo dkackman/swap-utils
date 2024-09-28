@@ -58,6 +58,7 @@ async function moveBalances(options, tibetSwap) {
         }
 
         const fingerprints = await chia.getWalletBalances();
+
         for (const fingerprint of fingerprints) {
             console.log(`Fingerprint ${fingerprint.fingerprint}`);
 
@@ -84,13 +85,13 @@ async function moveBalances(options, tibetSwap) {
     } finally {
         chia.disconnect();
     }
-    console.log("done");
 }
 
 async function balances(options, tibetSwap) {
     const chia = await getChia(options, tibetSwap);
     try {
         const fingerprints = await chia.getWalletBalances();
+
         const filter = options["include-pair-tokens"]
             ? () => true
             : (b) => b.wallet.is_asset_wallet;
@@ -117,7 +118,6 @@ async function balances(options, tibetSwap) {
     } finally {
         chia.disconnect();
     }
-    console.log("done");
 }
 
 async function names(options, tibetSwap) {
@@ -127,7 +127,6 @@ async function names(options, tibetSwap) {
     } finally {
         chia.disconnect();
     }
-    console.log("done");
 }
 
 async function xch(options, tibetSwap) {

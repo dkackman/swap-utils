@@ -1,6 +1,7 @@
 import _ from "lodash";
 import { isAddition, isRemoval } from "./swap.js";
 import { createAmountFromMojo } from "./pair_amount.js";
+import Cache from "./cache.js";
 import _debug from "debug";
 const debug = _debug("tibet");
 
@@ -11,11 +12,10 @@ export default class TibetSwap {
     }
 
     async loadTokenList() {
-        const tokensResponse = await fetch(`${this.apiUri}/tokens`);
-        this.tokens = await tokensResponse.json();
-
-        const pairsResponse = await fetch(`${this.apiUri}/pairs?limit=500`);
-        this.pairs = await pairsResponse.json();
+        const cache = new Cache(this.apiUri, this.analyticsUri);
+        const cacheData = await cache.loadTokenList();
+        this.tokens = cacheData.tokens;
+        this.pairs = cacheData.pairs;
     }
 
     getPairFromTrade(trade) {

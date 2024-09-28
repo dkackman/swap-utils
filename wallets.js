@@ -77,6 +77,8 @@ export class ChiaWalletManager {
     }
 
     async getWalletBalances() {
+        console.log("Retrieving balances...");
+
         let fingerprints = [];
         const tokenFilter = this.getFilter(this.options);
 
@@ -122,6 +124,8 @@ export class ChiaWalletManager {
     }
 
     async getConsolidatedWalletBalances() {
+        console.log("Retrieving balances...");
+
         let balances = [];
         const tokenFilter = this.getFilter(this.options);
 
