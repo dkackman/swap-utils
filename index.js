@@ -70,7 +70,7 @@ async function moveBalances(options, tibetSwap) {
                     balance.wallet_balance.spendable_balance > 0
                 ) {
                     console.log(
-                        `Sending ${balance.wallet_balance.confirmed_wallet_balance / 1000} ${balance.wallet.pair.short_name} to ${walletAddress}`,
+                        `Sending ${balance.wallet_balance.spendable_balance / 1000} ${balance.wallet.pair.short_name} to ${walletAddress}`,
                     );
                     await chia.waitForSync();
                     await chia.sendCat(
@@ -101,12 +101,11 @@ async function balances(options, tibetSwap) {
             for (const balance of fingerprint.balances.filter(filter)) {
                 if (
                     options.verbose ||
-                    balance.wallet_balance.confirmed_wallet_balance > 0
+                    balance.wallet_balance.spendable_balance > 0
                 ) {
                     console.log(
                         `\t${balance.wallet.name}: ${(
-                            balance.wallet_balance.confirmed_wallet_balance /
-                            1000
+                            balance.wallet_balance.spendable_balance / 1000
                         ).toLocaleString(
                             undefined,
                             catFloatFormat,
