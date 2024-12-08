@@ -42,6 +42,7 @@ if (options.help) {
 }
 
 async function moveBalances(options, tibetSwap) {
+    console.log("Moving balances...");
     const chia = await getChia(options, tibetSwap);
     try {
         const fee = await chia.getFee();
@@ -88,6 +89,7 @@ async function moveBalances(options, tibetSwap) {
 }
 
 async function balances(options, tibetSwap) {
+    console.log("Getting wallet balances...");
     const chia = await getChia(options, tibetSwap);
     try {
         const fingerprints = await chia.getWalletBalances();
@@ -120,6 +122,7 @@ async function balances(options, tibetSwap) {
 }
 
 async function names(options, tibetSwap) {
+    console.log("Setting wallet names from the tibet list...");
     const chia = await getChia(options, tibetSwap);
     try {
         await chia.setWalletNames();
@@ -129,6 +132,7 @@ async function names(options, tibetSwap) {
 }
 
 async function xch(options, tibetSwap) {
+    console.log("Getting XCH balances...");
     const chia = await getChia(options, tibetSwap);
     try {
         const balances = await chia.getConsolidatedWalletBalances();
