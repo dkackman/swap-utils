@@ -26,18 +26,18 @@
     "license": "Apache-2.0",
     "type": "module",
     "dependencies": {
-        "chalk": "^5.3.0",
+        "chalk": "^5.4.1",
         "chia-daemon": "^0.12.3",
         "command-line-args": "^6.0.1",
         "command-line-usage": "^7.0.3",
-        "debug": "^4.3.7",
+        "debug": "^4.4.0",
         "lodash": "^4.17.21"
     },
     "devDependencies": {
-        "eslint": "^9.16.0",
+        "eslint": "^9.17.0",
         "eslint-plugin-node": "^11.1.0",
         "jshint": "^2.13.6",
-        "prettier": "^3.4.1"
+        "prettier": "^3.4.2"
     },
     "bin": {
         "swap-utils": "./index.js"
