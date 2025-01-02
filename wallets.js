@@ -50,7 +50,7 @@ export class ChiaWalletManager {
         }
     }
 
-    async setWalletNames() {
+    async setWalletNames(mintgarden) {
         const tokenFilter = this.getFilter(this.options);
         for await (const fingerprint of this.options.wallet_fingerprints || [
             null,
@@ -59,9 +59,17 @@ export class ChiaWalletManager {
                 fingerprint,
                 tokenFilter,
             )) {
-                const shouldBeName = wallet.is_asset_wallet
+                let shouldBeName = wallet.is_asset_wallet
                     ? wallet.pair.name
                     : wallet.pair.pair_name;
+
+                if (wallet.is_unknown) {
+                    const mgToken = await mintgarden.getToken(wallet.asset_id);
+                    if (mgToken !== null) {
+                        console.log(`Using mint garden name ${mgToken.name}`);
+                        shouldBeName = mgToken.name;
+                    }
+                }
 
                 if (wallet.name !== shouldBeName) {
                     console.log(
@@ -103,13 +111,19 @@ export class ChiaWalletManager {
         return fingerprints;
     }
 
-    async getFee() {
-        const fee = await this.chia.services.full_node.get_fee_estimate({
+    async getFee(limit = 100000) {
+        const fees = await this.chia.services.full_node.get_fee_estimate({
             target_times: [300],
             spend_type: "send_xch_transaction",
         });
 
-        return fee.estimates[0];
+        const fee = fees.estimates[0];
+
+        if (fee > limit) {
+            throw new Error(`Fee too high: ${fee}`);
+        }
+
+        return fee;
     }
 
     async sendCat(walletId, address, amount, fee) {
@@ -181,6 +195,7 @@ export class ChiaWalletManager {
                 wallet.pair = pair;
                 wallet.fingerprint = fingerprint;
                 wallet.is_asset_wallet = wallet.asset_id === pair.asset_id;
+                wallet.is_unknown = wallet.name === "JUNK";
                 walletData.push(wallet);
             }
         }

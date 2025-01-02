@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import { getLiquiditySwaps, getLiquidityBalances } from "./offers.js";
 import TibetSwap from "./tibet.js";
+import MintGarden from "./mintgarden.js";
 import { options, showHelp, askUserToProceed } from "./commandLine.js";
+
 import { getChia } from "./wallets.js";
 import _ from "lodash";
 
@@ -92,6 +94,7 @@ async function balances(options, tibetSwap) {
     console.log("Getting wallet balances...");
     const chia = await getChia(options, tibetSwap);
     try {
+        //const fee = await chia.getFee();
         const fingerprints = await chia.getWalletBalances();
 
         const filter = options["include-pair-tokens"]
@@ -124,8 +127,9 @@ async function balances(options, tibetSwap) {
 async function names(options, tibetSwap) {
     console.log("Setting wallet names from the tibet list...");
     const chia = await getChia(options, tibetSwap);
+    const mintGarden = new MintGarden(options.mintgarden_api_uri);
     try {
-        await chia.setWalletNames();
+        await chia.setWalletNames(mintGarden);
     } finally {
         chia.disconnect();
     }

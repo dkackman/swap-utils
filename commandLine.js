@@ -103,6 +103,13 @@ const optionsList = [
         description: "The uri of the tibet analytics api",
     },
     {
+        name: "mintgarden_api_uri",
+        alias: "m",
+        type: String,
+        defaultValue: "https://api.mintgarden.io/",
+        description: "The uri of the mint garden api",
+    },
+    {
         name: "timeout_seconds",
         alias: "t",
         type: Number,
@@ -163,3 +170,4 @@ export async function askUserToProceed(options, question) {
     rl.close();
     return answer.toLowerCase() === "yes" || answer.toLowerCase() === "y";
 }
+
