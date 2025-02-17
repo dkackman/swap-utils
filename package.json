@@ -34,7 +34,7 @@
         "lodash": "^4.17.21"
     },
     "devDependencies": {
-        "eslint": "^9.17.0",
+        "eslint": "^9.20.1",
         "eslint-plugin-node": "^11.1.0",
         "jshint": "^2.13.6",
         "prettier": "^3.4.2"
