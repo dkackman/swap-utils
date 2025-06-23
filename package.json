@@ -37,7 +37,7 @@
         "eslint": "^9.23.0",
         "eslint-plugin-node": "^11.1.0",
         "jshint": "^2.13.6",
-        "prettier": "^3.5.3"
+        "prettier": "^3.6.0"
     },
     "bin": {
         "swap-utils": "./index.js"
